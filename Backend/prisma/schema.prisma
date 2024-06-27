@@ -1,0 +1,65 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+model User {
+  id                    String            @id @default(uuid())
+  firstName             String
+  lastName              String
+  username              String            @unique
+  password              String
+  email                 String            @unique
+  spotifyAccount        SpotifyAccount?
+  nowListening          NowListening[]
+  initiatedFriendships  Friendship[]      @relation("FriendshipInitiator")
+  receivedFriendships   Friendship[]      @relation("FriendshipReceiver")
+  topSongs              TopSongs[]
+}
+
+model SpotifyAccount {
+  id            String    @id @default(uuid())
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        String    @unique
+  spotifyId     String    // User's Spotify ID
+  accessToken   String    // Access token for API access
+  refreshToken  String    // Refresh token for API access
+}
+
+
+model Friendship {
+  id                  String      @id @default(uuid())
+  initiator           User        @relation("FriendshipInitiator", fields: [initiatorId], references: [id], onDelete: Cascade)
+  initiatorId         String
+  receiver            User        @relation("FriendshipReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  receiverId          String
+  initiatorConfirmed  Boolean     @default(false)  // Confirmation from the initiator
+  receiverConfirmed   Boolean     @default(false)  // Confirmation from the receiver
+  confirmed           Boolean     @default(false)     // True if both sides confirmed
+}
+
+model NowListening {
+  id        String      @id @default(uuid())
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  trackId   String     //spotify track id
+  @@index([userId])
+}
+
+model TopSongs {
+  id        String      @id @default(uuid())
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  trackId   String    //spotify track id
+}
