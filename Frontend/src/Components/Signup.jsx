@@ -1,6 +1,7 @@
 import React, { useState, useContext } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { UserContext } from '../UserContext';
+import PasswordChecklist from 'react-password-checklist';
 import '../CSS/Signup.css'
 
 export default function Signup() {
@@ -9,12 +10,14 @@ export default function Signup() {
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [passwordAgain, setPasswordAgain] = useState('');
     const { updateUser } = useContext(UserContext);
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
+        e.preventDefault();
         try {
-            const response = await fetch(`http://localhost:4700/users`, {
+            const response = await fetch(`http://localhost:4700/users/signup`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -27,16 +30,14 @@ export default function Signup() {
                 const data = await response.json();
                 const loggedInUser = data.user;
 
-                console.log('Signup Successful!')
-
                 setFirstName('');
                 setLastName('');
                 setUsername('');
                 setEmail('');
                 setPassword('');
+                setPasswordAgain('');
 
                 updateUser(loggedInUser)
-
                 navigate('/')
             }else {
                 alert('Signup failed!');
@@ -73,6 +74,27 @@ export default function Signup() {
                 <div className='form-group'>
                     <label htmlFor='password'>Password:</label>
                     <input type="password" id="password" value={password} onChange={(e) => setPassword(e.target.value)} required/>
+                </div>
+                <div className='form-group'>
+                    <label htmlFor='passwordAgain'>Password Again:</label>
+                    <input type="password" id="passwordAgain" value={passwordAgain} onChange={(e) => setPasswordAgain(e.target.value)} required/>
+                </div>
+                <div className='password-check'>
+                    <PasswordChecklist
+                        rules = {["minLength", "specialChar", "number", "capital", "match", "notEmpty"]}
+                        minLength={8}
+                        value={password}
+                        valueAgain={passwordAgain}
+                        onChange={(isValid) => {}}
+                        messages={{
+                            minLength: "Password should have 8 characters minimum",
+                            specialChar: "Password must contain a special character",
+                            number: "Password must contain a number",
+                            capital: "Password must contain at least one capital letter",
+                            match: "Passwords must match",
+                            notEmpty: "Password cannot be empty"
+                        }}
+                    />
                 </div>
                 <button type='submit'>Sign Up</button>
                 <p>Already have an account? <Link to="/login">Login</Link></p>

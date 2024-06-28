@@ -3,6 +3,7 @@ import { UserContext } from './UserContext'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Login from './Components/Login'
 import Signup from './Components/Signup'
+import Main from './Components/Main'
 import './App.css'
 
 export default function App() {
