@@ -25,7 +25,10 @@ model User {
   nowListening          NowListening[]
   initiatedFriendships  Friendship[]      @relation("FriendshipInitiator")
   receivedFriendships   Friendship[]      @relation("FriendshipReceiver")
+  confirmedFriends      Friendship[]      @relation("FriendshipConfirmed")
   topSongs              TopSongs[]
+  accessToken           String?
+  refreshToken          String?
 }
 
 model SpotifyAccount {
@@ -47,6 +50,8 @@ model Friendship {
   initiatorConfirmed  Boolean     @default(false)  // Confirmation from the initiator
   receiverConfirmed   Boolean     @default(false)  // Confirmation from the receiver
   confirmed           Boolean     @default(false)     // True if both sides confirmed
+  confirmedFriend     User        @relation("FriendshipConfirmed", fields: [confirmedId], references: [id], onDelete: Cascade)
+  confirmedId         String
 }
 
 model NowListening {

@@ -22,7 +22,7 @@ export default function Signup() {
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ firstName, lastName, username, email, password }),
+                body: JSON.stringify({ firstName, lastName, username, email, password, passwordAgain }),
                 credentials: 'include'
             });
 
@@ -43,7 +43,7 @@ export default function Signup() {
                 alert('Signup failed!');
             }
         } catch (error) {
-            alert('Signup failed' + error);
+            alert('Signup failed! ' + error);
         }
     }
 

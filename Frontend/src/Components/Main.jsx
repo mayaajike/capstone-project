@@ -1,35 +1,41 @@
-import React, { useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { UserContext } from '../UserContext';
 
 
-export default async function Main() {
-    const { updateUser } = useContext(UserContext);
+export default function Main() {
+    const [username, setUsername] = useState('');
 
-
-    try {
-        const response = await fetch(`http://localhost:4700/users/login`,{
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ email, username, password }),
-            credentials: 'include'
-        });
-
-        if (response.ok) {
-            const data = await response.json();
-            const loggedInUser = data.user;
-
-            updateUser(loggedInUser);
-            navigate('/');
-            console.log(updateUser)
-        } else {
-            alert('Login Failed');
+    const getUsername = async () => {
+        const accessToken = localStorage.getItem('accessToken')
+        if (!accessToken) {
+            alert("Access Token is missing")
+            return;
         }
-    } catch (error) {
-        alert('Login failed' + error);
-    }
+        try {
+            const response = await fetch('http://localhost:4700', {
+            method: 'GET',
+            headers: {
+                'Content-Type' : 'application/json',
+                Authorization: `Bearer ${accessToken}`,
+            },
+            credentials: 'include'
+            })
+
+            if (response.ok) {
+                const data = await response.json()
+                setUsername(data.username)
+            } else{
+                alert(`Failed to fetch data: ${response.status}`);
+        }
+        }catch (error) {
+            alert('Login failed' + error);
+        }}
+
+    useEffect(()=> {
+        getUsername();
+    }, [username])
+
     return (
-        <h1>Welcome Log in Successful!</h1>
+        <h1>Welcome {username}, Log in Successful!</h1>
     )
 }
