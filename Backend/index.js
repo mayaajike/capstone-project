@@ -3,8 +3,6 @@ const bcrypt = require('bcryptjs')
 const cors = require('cors')
 const express = require('express')
 const app = express()
-const flash = require('express-flash')
-const session = require('express-session')
 app.use(express.json());
 
 const corsOptions = {
@@ -18,18 +16,6 @@ const { PrismaClient } = require('@prisma/client')
 const prisma = new PrismaClient()
 const PORT = process.env.PORT || 3000
 const jwt = require('jsonwebtoken')
-// const passport = require('passport')
-// const initializePassport = require('./passport-config')
-// initializePassport(passport, findUser)
-
-// app.use(flash())
-// app.use(session({
-//     secret: process.env.ACCESS_TOKEN_SECRET,
-//     resave: false,
-//     saveUninitialized: false
-// }))
-// app.use(passport.initialize())
-// app.use(passport.session())
 const hashPassword = async (password) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
@@ -211,7 +197,7 @@ app.post('/token', async (req, res) => {
 })
 
 function generateAccessToken(user){
-    return jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "3s" })
+    return jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "10m" })
 }
 
 function authenticateToken(req, res, next) {

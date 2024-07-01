@@ -19,34 +19,34 @@ export default function Main() {
     }, [username])
 
 
-    const refreshToken = async () => {
-        const refreshToken = localStorage.getItem('refreshToken')
-        console.log(refreshToken)
-        const user = JSON.parse(localStorage.getItem('user'));
-        const username = user.username;
-        if (!refreshToken) {
-            alert("Refresh token is missing");
-            return;
-        }
-        try {
-            const response = await fetch('http://localhost:4700/token', {
-                method: "POST",
-                headers: {
-                    "Content-Type": 'application/json'
-                },
-                body: JSON.stringify({ username, refreshToken })
-            });
-            const data = await response.json()
-            console.log(data)
-            const { accessToken } = data;
-            localStorage.setItem('accessToken', accessToken);
-            getUsername();
-            setTimeout(refreshToken, 1000);
-        } catch(error) {
-            alert('Failed to refresh token ' + error)
-        }
+    // const refreshToken = async () => {
+    //     const refreshToken = localStorage.getItem('refreshToken')
+    //     console.log(refreshToken)
+    //     const user = JSON.parse(localStorage.getItem('user'));
+    //     const username = user.username;
+    //     if (!refreshToken) {
+    //         alert("Refresh token is missing");
+    //         return;
+    //     }
+    //     try {
+    //         const response = await fetch('http://localhost:4700/token', {
+    //             method: "POST",
+    //             headers: {
+    //                 "Content-Type": 'application/json'
+    //             },
+    //             body: JSON.stringify({ username, refreshToken })
+    //         });
+    //         const data = await response.json()
+    //         console.log(data)
+    //         const { accessToken } = data;
+    //         localStorage.setItem('accessToken', accessToken);
+    //         getUsername();
+    //         setTimeout(refreshToken, 1000);
+    //     } catch(error) {
+    //         alert('Failed to refresh token ' + error)
+    //     }
 
-    }
+    // }
 
     // setInterval(async () => {
     //     const accessToken = localStorage.getItem('accessToken');
