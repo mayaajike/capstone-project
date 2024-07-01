@@ -3,7 +3,10 @@ const bcrypt = require('bcryptjs')
 const cors = require('cors')
 const express = require('express')
 const app = express()
+const flash = require('express-flash')
+const session = require('express-session')
 app.use(express.json());
+
 const corsOptions = {
     origin: 'http://localhost:5173',
     credentials: true,
@@ -15,8 +18,18 @@ const { PrismaClient } = require('@prisma/client')
 const prisma = new PrismaClient()
 const PORT = process.env.PORT || 3000
 const jwt = require('jsonwebtoken')
+// const passport = require('passport')
+// const initializePassport = require('./passport-config')
+// initializePassport(passport, findUser)
 
-
+// app.use(flash())
+// app.use(session({
+//     secret: process.env.ACCESS_TOKEN_SECRET,
+//     resave: false,
+//     saveUninitialized: false
+// }))
+// app.use(passport.initialize())
+// app.use(passport.session())
 const hashPassword = async (password) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
@@ -42,7 +55,7 @@ const validatePassword = (password, passwordAgain) => {
 
 
 async function findUser(username) {
-    const user = await prisma.user.findUnique({
+    const user = await prisma.user.findFirst({
         where: {
             username: username,
         },
@@ -59,7 +72,7 @@ app.get('/users', async (req, res) => {
     res.json(users)
 })
 
-// route to create a new user.
+// // route to create a new user.
 app.post('/users/signup', async (req, res) => {
     const { firstName, lastName, username, email, password, passwordAgain } = req.body;
 
@@ -73,7 +86,7 @@ app.post('/users/signup', async (req, res) => {
             if (isValid.errorCode === 401) return res.status(401).json({ error: isValid.errorMessage})
         }
             const hashedPassword = await hashPassword(password);
-            const user = { username: username, password: password }
+            const user = { username: username }
             const accessToken = generateAccessToken(user)
             const refreshToken = jwt.sign(user, process.env.REFRESH_TOKEN_SECRET)
             const newUser = await prisma.user.create({
@@ -96,7 +109,7 @@ app.post('/users/signup', async (req, res) => {
 
 // route for user login
 app.post('/users/login', async (req, res) => {
-    const { email, username, password } = req.body;
+    const { username, password } = req.body;
 
     try {
         const existingUser = await findUser(username)
@@ -111,8 +124,21 @@ app.post('/users/login', async (req, res) => {
             }
 
             const user = { username: username }
-            existingUser.accessToken = generateAccessToken(user)
-            existingUser.refreshToken = jwt.sign(user, process.env.REFRESH_TOKEN_SECRET)
+            const accessToken = generateAccessToken(user)
+            const refreshToken = jwt.sign(user, process.env.REFRESH_TOKEN_SECRET)
+
+            existingUser.accessToken = accessToken
+            existingUser.refreshToken = refreshToken
+
+            await prisma.user.update({
+                where: {
+                    username: username,
+                },
+                data: {
+                    accessToken: accessToken,
+                    refreshToken: refreshToken,
+                },
+            })
 
             return res.status(200).json({
                 message: "Login successful!",
@@ -124,26 +150,64 @@ app.post('/users/login', async (req, res) => {
     }
 })
 
-
-app.post('/token', async (req, res) => {
-    const { username, email, refreshToken } = req.body;
+app.post('/logout', async (req, res) => {
+    const { username } = req.body;
 
     try {
-        const existingUser = await findUser(username, email)
+        const existingUser = await findUser(username);
+
+        if (!existingUser) return res.status(401).json({ error: "User doesn't exist" })
+
+        existingUser.accessToken = null;
+        existingUser.refreshToken = null;
+
+        await prisma.user.update({
+            where: {
+                username: username,
+            },
+            data: {
+                accessToken: null,
+                refreshToken: null,
+            },
+        })
+
+        return res.status(200).json({
+            message: "Logout successful!",
+            user: existingUser
+        });
+    } catch {
+        res.status(500).json({ error: "Server error" });
+    }
+})
+
+
+app.post('/token', async (req, res) => {
+    const { username, refreshToken } = req.body;
+    let accessToken;
+    try {
+        const existingUser = await findUser(username)
 
         if (refreshToken === null || existingUser.refreshToken !== refreshToken) return res.status(401).json({ error: "Invalid token" })
         jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
             if (err) return res.status(403).json({ error: "Invalid Token" })
-            existingUser.accessToken = generateAccessToken(user)
+            accessToken =  generateAccessToken(user)
+        })
+        existingUser.accessToken = accessToken
+        await prisma.user.update({
+            where: {
+                username: username,
+            },
+            data: {
+                accessToken: accessToken,
+            },
         })
         return res.status(200).json({
             message: "Token refreshed",
-            user: existingUser
+            accessToken: existingUser.accessToken,
         })
     } catch (error) {
         res.status(500).json({ error: 'Server error'})
     }
-
 })
 
 function generateAccessToken(user){
