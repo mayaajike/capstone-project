@@ -169,22 +169,24 @@ app.post('/logout', async (req, res) => {
 
 app.post('/token', async (req, res) => {
     const { username, refreshToken } = req.body;
-    let accessToken;
+    let newAccessToken;
     try {
         const existingUser = await findUser(username)
+        const currentUser = { username: username }
+
 
         if (refreshToken === null || existingUser.refreshToken !== refreshToken) return res.status(401).json({ error: "Invalid token" })
-        jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
+        jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, async (err, user) => {
             if (err) return res.status(403).json({ error: "Invalid Token" })
-            accessToken =  generateAccessToken(user)
+            newAccessToken =  generateAccessToken(currentUser)
         })
-        existingUser.accessToken = accessToken
+        existingUser.accessToken = newAccessToken
         await prisma.user.update({
             where: {
                 username: username,
             },
             data: {
-                accessToken: accessToken,
+                accessToken: newAccessToken,
             },
         })
         return res.status(200).json({

@@ -6,59 +6,49 @@ import { UserContext } from '../UserContext';
 export default function Main() {
     const [username, setUsername] = useState('');
     const navigate = useNavigate();
-    const accessToken = localStorage.getItem('accessToken');
-
-    // useEffect(() => {
-    //     if (!accessToken) {
-    //         refreshToken()
-    //     }
-    // })
+    let currentAccessToken = localStorage.getItem('accessToken')
 
     useEffect(()=> {
         getUsername();
     }, [username])
 
+    const refreshToken = async () => {
+        const refreshToken = localStorage.getItem('refreshToken')
+        const user = JSON.parse(localStorage.getItem('user'));
+        const username = user.username;
+        if (!refreshToken) {
+            alert("Refresh token is missing");
+            return;
+        }
+        try {
+            const response = await fetch('http://localhost:4700/token', {
+                method: "POST",
+                headers: {
+                    "Content-Type": 'application/json'
+                },
+                body: JSON.stringify({ username, refreshToken })
+            });
+            const data = await response.json()
+            const { message, accessToken } = data;
+            currentAccessToken = accessToken;
+            localStorage.setItem('accessToken', accessToken);
+            localStorage.setItem('refreshToken', refreshToken);
+            getUsername();
+        } catch(error) {
+            alert('Failed to refresh token ' + error)
+        }
+    }
 
-    // const refreshToken = async () => {
-    //     const refreshToken = localStorage.getItem('refreshToken')
-    //     console.log(refreshToken)
-    //     const user = JSON.parse(localStorage.getItem('user'));
-    //     const username = user.username;
-    //     if (!refreshToken) {
-    //         alert("Refresh token is missing");
-    //         return;
-    //     }
-    //     try {
-    //         const response = await fetch('http://localhost:4700/token', {
-    //             method: "POST",
-    //             headers: {
-    //                 "Content-Type": 'application/json'
-    //             },
-    //             body: JSON.stringify({ username, refreshToken })
-    //         });
-    //         const data = await response.json()
-    //         console.log(data)
-    //         const { accessToken } = data;
-    //         localStorage.setItem('accessToken', accessToken);
-    //         getUsername();
-    //         setTimeout(refreshToken, 1000);
-    //     } catch(error) {
-    //         alert('Failed to refresh token ' + error)
-    //     }
-
-    // }
-
-    // setInterval(async () => {
-    //     const accessToken = localStorage.getItem('accessToken');
-    //     if (!accessToken || accessToken === 'null') {
-    //         await refreshToken();
-    //     }
-    // }, 1000)
+    setInterval(async () => {
+        const currentTime = new Date().getTime() / 1000;
+        const tokenExpiration = localStorage.getItem("tokenExpiration");
+        if ( currentTime >= tokenExpiration) {
+            await refreshToken();
+        }
+    }, 300000)
 
     const getUsername = async () => {
-        const user = JSON.parse(localStorage.getItem('user'));
-        console.log(user)
-        if (!accessToken) {
+        if (!currentAccessToken || currentAccessToken === null) {
             alert("Access Token is missing")
             return;
         }
@@ -67,21 +57,22 @@ export default function Main() {
                 method: 'GET',
                 headers: {
                     'Content-Type' : 'application/json',
-                    Authorization: `Bearer ${accessToken}`,
+                    Authorization: `Bearer ${currentAccessToken}`,
                 },
                 credentials: 'include'
             })
 
             if (response.ok) {
                 const data = await response.json()
+                localStorage.setItem('tokenExpiration', data.exp)
+                const validUntil = data.exp - data.iat;
                 setUsername(data.username)
             } else{
-                alert(`Failed to fetch data: ${response.status}`);
+                alert(`Failed to fetch key: ${response.status}`);
         }
         }catch (error) {
             alert('Login failed' + error);
     }}
-
 
     const handleLogout = async (e) => {
         e.preventDefault();
@@ -92,7 +83,7 @@ export default function Main() {
                 method: "POST",
                 headers: {
                     'Content-Type': 'application/json',
-                    Authorization: `Bearer ${accessToken}`,
+                    Authorization: `Bearer ${currentAccessToken}`,
                 },
                 credentials: 'include',
                 body: JSON.stringify({ username }),
