@@ -49,6 +49,30 @@ async function findUser(username) {
     return user;
 }
 
+function generateAccessToken(user){
+    return jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "10m" })
+}
+
+function authenticateToken(req, res, next) {
+    const authHeader = req.headers.authorization
+    const token = authHeader && authHeader.split(' ')[1]
+
+    if (token === null) return res.status(401).json({ error: "Invalid user" });
+
+    try {
+        jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
+            if (err) return res.status(403).json({ error: "Invalid token" });
+            const existingUser = findUser(JSON.stringify(user))
+            if (existingUser) {
+                req.user = user;
+                next()
+            }
+        })
+    } catch (error){
+        res.status(500).json({ error: "Server error" })
+    }
+}
+
 app.get('/', authenticateToken, async (req, res) => {
     res.json(req.user)
 })
@@ -58,7 +82,11 @@ app.get('/users', async (req, res) => {
     res.json(users)
 })
 
-// // route to create a new user.
+app.get('/spotify-accounts', async (req, res) => {
+    const accounts = await prisma.spotifyAccount.findMany()
+    res.json(accounts)
+})
+
 app.post('/users/signup', async (req, res) => {
     const { firstName, lastName, username, email, password, passwordAgain } = req.body;
 
@@ -93,7 +121,6 @@ app.post('/users/signup', async (req, res) => {
     }
 });
 
-// route for user login
 app.post('/users/login', async (req, res) => {
     const { username, password } = req.body;
 
@@ -166,7 +193,6 @@ app.post('/logout', async (req, res) => {
     }
 })
 
-
 app.post('/token', async (req, res) => {
     const { username, refreshToken } = req.body;
     let newAccessToken;
@@ -189,38 +215,103 @@ app.post('/token', async (req, res) => {
                 accessToken: newAccessToken,
             },
         })
-        return res.status(200).json({
-            message: "Token refreshed",
-            accessToken: existingUser.accessToken,
-        })
+        return res.status(200).json({ message: "Token refreshed" })
     } catch (error) {
         res.status(500).json({ error: 'Server error'})
     }
 })
 
-function generateAccessToken(user){
-    return jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "10m" })
+const clientId = process.env.SPOTIFY_CLIENT_ID
+const clientSecret = process.env.SPOTIFY_CLIENT_SECRET
+const redirectUri = 'http://localhost:5173/'
+
+async function generateRandomString(length) {
+    let text = '';
+    const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+
+    for (let i = 0; i < length; i++) {
+      text += possible.charAt(Math.floor(Math.random() * possible.length));
+    }
+    return text;
 }
 
-function authenticateToken(req, res, next) {
-    const authHeader = req.headers.authorization
-    const token = authHeader && authHeader.split(' ')[1]
-
-    if (token === null) return res.status(401).json({ error: "Invalid user" });
+app.get('/authorize', async (req, res) => {
 
     try {
-        jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
-            if (err) return res.status(403).json({ error: "Invalid token" });
-            const existingUser = findUser(JSON.stringify(user))
-            if (existingUser) {
-                req.user = user;
-                next()
-            }
-        })
-    } catch (error){
-        res.status(500).json({ error: "Server error" })
+        const state = await generateRandomString(16);
+        const responseType = "code"
+        const scope = 'user-read-private user-read-email';
+        const authorizationUrl = `https://accounts.spotify.com/authorize?response_type=${responseType}&client_id=${clientId}&scope=${scope}&redirect_uri=${redirectUri}&state=${state}`
+        res.status(200).json({ authorizationUrl: authorizationUrl })
+    }catch (error) {
+        res.status(500).json({ error: 'Server error' })
     }
-}
+
+});
+
+app.get('/callback', async (req, res) => {
+    const code = req.query.code || null;
+    const state = req.query.state || null;
+    const stateMismatch = 'state_mismatch'
+
+    try {if (state === null) {
+        res.redirect(`/#?error=${stateMismatch}`)
+    } else {
+        const authOptions = {
+            method: "POST",
+            headers: {
+                'Content-type': 'application/x-www-form-urlencoded',
+                'Authorization': 'Basic ' + (new Buffer.from(`${clientId}:${clientSecret}`).toString('base64'))
+            },
+            body: `grant_type=authorization_code&code=${code}&redirect_uri=${redirectUri}`,
+        };
+
+        const tokenResponse = await fetch('https://accounts.spotify.com/api/token', authOptions);
+        if (tokenResponse.ok) {
+            const tokenData = await tokenResponse.json();
+            const { access_token, token_type, scope, expires_in, refresh_token } = tokenData;
+
+            res.status(200).json({
+                spotifyAccessToken: access_token,
+                tokenType: token_type,
+                scope: scope,
+                expiresIn: expires_in,
+                spotifyRefreshToken: refresh_token
+            })
+        } else {
+            const errorMessage = await tokenResponse.text();
+            res.status(500).json({ error: "Failed to retrieve tokens from Spotify" })
+        }
+    }} catch (error) {
+        res.status(500).json({ error: "Server error"})
+    }
+});
+
+app.post('/save-tokens', async (req, res) => {
+    const { username, accessToken, refreshToken, userId, spotifyUrl } = req.body;
+    const currentUser = await findUser(username)
+    try {
+        const existingSpotifyAccount = await prisma.spotifyAccount.findUnique({
+            where: { userId: currentUser.id }
+        })
+        if (!existingSpotifyAccount) {
+            await prisma.spotifyAccount.create({
+                data: {
+                    spotifyId: userId,
+                    accessToken: accessToken,
+                    refreshToken: refreshToken,
+                    spotifyUrl: spotifyUrl,
+                    user:{
+                        connect: currentUser
+                    }
+                }
+            });
+        }
+        res.status(200).json({ message: "Tokens saved" })
+    } catch (error) {
+        res.status(500).json({ error: "Server error"})
+    }
+})
 
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`)
