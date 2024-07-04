@@ -7,7 +7,6 @@ import '../CSS/Login.css'
 export default function Login() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
-    const [email, setEmail] = useState('');
     const { updateUser } = useContext(UserContext);
     const navigate = useNavigate();
 
@@ -19,7 +18,7 @@ export default function Login() {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ email, username, password }),
+                body: JSON.stringify({ username, password }),
                 credentials: 'include'
             });
 
@@ -28,7 +27,10 @@ export default function Login() {
                 const loggedInUser = data.user;
                 localStorage.setItem('accessToken', data.user.accessToken);
                 localStorage.setItem('refreshToken', data.user.refreshToken);
+                localStorage.setItem('user', JSON.stringify(data.user));
 
+                setUsername('');
+                setPassword('');
                 updateUser(loggedInUser);
                 navigate('/');
             } else {
@@ -38,6 +40,14 @@ export default function Login() {
             alert('Login failed' + error);
         }
     };
+
+    // const validateToken = async () => {
+    //     if (!token) return false;
+
+    //     try {
+    //         const response =
+    //     }
+    // }
 
     const refreshToken = async () => {
         const refreshToken = localStorage.getItem('refreshToken');
@@ -61,13 +71,8 @@ export default function Login() {
 
     return (
         <div className='login-container'>
-            <form className='login-form' onSubmit={handleLogin}>
+            <form className='login-form' onSubmit={handleLogin} >
                 <h2>Login</h2>
-                <div className='form-group'>
-                    <label htmlFor='email'>Email:</label>
-                    <input type="text" id="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-                </div>
-
                 <div className='form-group'>
                     <label htmlFor='username'>Username:</label>
                     <input type="text" id="username" value={username} onChange={(e) => setUsername(e.target.value)} required />
