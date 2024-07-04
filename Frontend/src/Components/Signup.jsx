@@ -29,9 +29,6 @@ export default function Signup() {
             if (response.ok) {
                 const data = await response.json();
                 const loggedInUser = data.user;
-                localStorage.setItem('accessToken', data.user.accessToken);
-                localStorage.setItem('refreshToken', data.user.refreshToken);
-                localStorage.setItem('user', data.user);
 
                 setFirstName('');
                 setLastName('');

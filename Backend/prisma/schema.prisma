@@ -38,7 +38,6 @@ model SpotifyAccount {
   spotifyId     String    // User's Spotify ID
   accessToken   String    // Access token for API access
   refreshToken  String    // Refresh token for API access
-  spotifyUrl    String
 }
 
 
