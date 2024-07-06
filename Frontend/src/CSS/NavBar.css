@@ -1,0 +1,15 @@
+.nav-bar {
+    background-color: lightblue;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000;
+    padding: 10px 0;
+    flex-direction: row;
+    justify-content: center;
+}
+
+.log-out {
+    margin-left: auto;
+}

@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom'
 import { UserContext } from '../UserContext';
 import '../CSS/Login.css'
 
-
 export default function Login() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
@@ -40,34 +39,6 @@ export default function Login() {
             alert('Login failed' + error);
         }
     };
-
-    // const validateToken = async () => {
-    //     if (!token) return false;
-
-    //     try {
-    //         const response =
-    //     }
-    // }
-
-    const refreshToken = async () => {
-        const refreshToken = localStorage.getItem('refreshToken');
-        const response = await fetch(`http://localhost:4700/token`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ username, email, refreshToken })
-        });
-
-        if (response.ok) {
-            const data = await response.json()
-            const newAccessToken = data.user.accessToken
-
-            localStorage.setItem('accessToken', newAccessToken)
-        } else {
-            console.log("Token refresh failed")
-        }
-    }
 
     return (
         <div className='login-container'>

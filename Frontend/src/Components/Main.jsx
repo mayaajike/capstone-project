@@ -1,6 +1,7 @@
 import React, { useState, useContext, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom'
 import { UserContext } from '../UserContext';
+import NavBar from './NavBar';
 
 
 export default function Main() {
@@ -54,34 +55,13 @@ export default function Main() {
         if ( currentTime >= tokenExpiration) {
             await refreshToken();
         }
-    }, 300000)
+    }, 30000)
 
     const getUsername = async () => {
-        if (!currentAccessToken || currentAccessToken === null) {
-            alert("Access Token is missing")
-            return;
-        }
-        try {
-            const response = await fetch('http://localhost:4700', {
-                method: 'GET',
-                headers: {
-                    'Content-Type' : 'application/json',
-                    Authorization: `Bearer ${currentAccessToken}`,
-                },
-                credentials: 'include'
-            })
-
-            if (response.ok) {
-                const data = await response.json()
-                localStorage.setItem('tokenExpiration', data.exp)
-                const validUntil = data.exp - data.iat;
-                setUsername(data.username)
-            } else{
-                alert(`Failed to fetch key: ${response.status}`);
-        }
-        }catch (error) {
-            alert('Login failed' + error);
-    }}
+        const user = JSON.parse(localStorage.getItem("user"))
+        const username = user.username;
+        setUsername(username)
+    }
 
     const handleLogout = async (e) => {
         e.preventDefault();
@@ -174,7 +154,6 @@ export default function Main() {
 
     const getProfile = async () => {
         const spotifyAccessToken = localStorage.getItem("spotifyAccessToken")
-
         const response = await fetch('https://api.spotify.com/v1/me', {
             headers: {
                 Authorization: `Bearer ${spotifyAccessToken}`
@@ -194,7 +173,6 @@ export default function Main() {
             if (!accessToken || !refreshToken){
                 throw new Error("Invalid input!")
             }
-
             const response = await fetch('http://localhost:4700/save-tokens', {
                 method: "POST",
                 headers: {
@@ -215,10 +193,9 @@ export default function Main() {
 
     return (
         <>
+            <NavBar handleLogout={handleLogout} />
             <h1>Welcome {username}, Log in Successful!</h1>
             <a href='#' onClick={handleAuthorization}>Login to Spotify</a>
-            <br />
-            <a href="#" onClick={handleLogout}>Logout</a>
         </>
     )
 }
