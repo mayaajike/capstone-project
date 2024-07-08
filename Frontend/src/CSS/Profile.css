@@ -36,7 +36,6 @@
     padding: 20px;
 }
 
-/* Container for top songs */
 .top-songs-container {
     width: 300px;
     padding: 20px;
@@ -46,24 +45,20 @@
     margin-right: 90px;
   }
 
-  /* Individual song item */
-  .song-item {
+.song-item {
     margin-bottom: 15px;
     padding: 10px;
     border-bottom: 1px solid #ddd;
-  }
+}
 
-  /* Song title styling */
-  .song-title {
+.song-title {
     font-size: 1.2em;
     font-weight: bold;
     color: #333;
-    margin-bottom: 3px;
-  }
+}
 
-  /* Artist name styling */
-  .artist-name {
+.artist-name {
     font-size: 1em;
     color: #666;
-    margin: 5px 0 5px 0;
-  }
+    margin: 0px 0 5px 0;
+}

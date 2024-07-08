@@ -1,0 +1,30 @@
+#search-bar {
+    padding: 12px;
+    width: 300px;
+    margin-right: 3px;
+    border: 1px solid black;
+    border-radius: 10px;
+}
+
+#search-button {
+    padding: 10px;
+    border: 1px solid black;
+    border-radius: 5px;
+}
+
+.searchForm {
+    margin-bottom: 15px;
+}
+
+.search-result {
+    width: 100%;
+    background-color: grey;
+    margin-top: 10px;
+}
+
+.search-result div {
+    width: 100%;
+    padding: 10px 25px;
+    background-color: grey;
+    cursor: pointer;
+}

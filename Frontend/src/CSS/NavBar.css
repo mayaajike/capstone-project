@@ -10,6 +10,7 @@
     justify-content: center;
 }
 
-.log-out {
-    margin-left: auto;
+.search-bar {
+    right: 30px;
+    position: fixed;
 }

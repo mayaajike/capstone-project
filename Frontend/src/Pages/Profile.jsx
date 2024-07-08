@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react'
 import NavBar from '../Components/NavBar'
 import '../CSS/Profile.css'
 
-export default function Profile() {
+export default function Profile({ searchResults, setSearchResults, searchQuery, setSearchQuery, handleSearch }) {
+    // const [username, setUsername] = useState("")
     const user = JSON.parse(localStorage.getItem('user'));
     const username = user.username;
     const [topSongs, setTopSongs] = useState([])
@@ -57,7 +58,6 @@ export default function Profile() {
             })
             if (response.ok) {
                 const data = await response.json()
-                console.log(data)
                 setTopSongs(data)
             } else {
                 alert("Unable to fetch top songs")
@@ -66,10 +66,11 @@ export default function Profile() {
             alert("Unable to fetch top songs ", error)
         }
     }
-    console.log(topSongs)
+
     return(
         <div className='profile-page'>
-            <NavBar />
+            <NavBar username={username} searchResults={searchResults} setSearchResults={setSearchResults}
+             searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearch={handleSearch} />
             <div className='main-content'>
                 <img className='profile-pic' src='https://picsum.photos/200/300' />
                 <h3 className='username'>@{username}</h3>

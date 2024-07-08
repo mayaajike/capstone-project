@@ -3,13 +3,13 @@ import { Link, useNavigate } from 'react-router-dom'
 import { UserContext } from '../UserContext';
 import NavBar from './NavBar';
 
-
-export default function Main() {
+export default function Main({ searchResults, setSearchResults, searchQuery, setSearchQuery, handleSearch }) {
     const [username, setUsername] = useState('');
     const [code, setCode] = useState('')
     const hasRunRef = useRef(false);
     const navigate = useNavigate();
     let currentAccessToken = localStorage.getItem('accessToken')
+
 
     useEffect(()=> {
         getUsername();
@@ -193,7 +193,8 @@ export default function Main() {
 
     return (
         <>
-            <NavBar handleLogout={handleLogout} />
+            <NavBar handleLogout={handleLogout} handleSearch={handleSearch} searchResults={searchResults}
+            setSearchResults={setSearchResults} searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
             <h1>Welcome {username}, Log in Successful!</h1>
             <a href='#' onClick={handleAuthorization}>Login to Spotify</a>
         </>

@@ -215,6 +215,44 @@ app.post('/token', async (req, res) => {
     }
 })
 
+
+app.post('/search', async (req, res) =>{
+    const { searchQuery } = req.body;
+    const results = await prisma.user.findMany({
+        where: {
+            OR: [
+                {
+                    firstName: {
+                        contains: searchQuery,
+                        mode: 'insensitive'
+                    }
+                },
+                {
+                    lastName: {
+                        contains: searchQuery,
+                        mode: 'insensitive'
+                    }
+                },
+                {
+                    username: {
+                        contains: searchQuery,
+                        mode: 'insensitive'
+                    }
+        }]}})
+    res.status(200).json({ results: results })
+})
+
+app.get('/profile', async (req, res) => {
+    const { username } = req.query;
+    const user = await findUser(username);
+
+    if (user) {
+        res.status(200).json({ user: user})
+    } else {
+        res.status(500).json({ error: "Server error"})
+    }
+})
+
 const clientId = process.env.SPOTIFY_CLIENT_ID
 const clientSecret = process.env.SPOTIFY_CLIENT_SECRET
 const redirectUri = 'http://localhost:5173/'
@@ -310,21 +348,14 @@ app.post('/save-tokens', async (req, res) => {
                 }
             })
         }
-        res.status(200).json({
-            message: "Tokens saved",
-            accessToken: accessToken
-        })
+        res.status(200).json({ message: "Tokens saved" })
     } catch (error) {
-        console.log(error)
-        res.status(500).json({ error: "Server error"})
+        res.status(500).json({ error: "Server error" })
     }
 })
 
 
-async function getTopSongs(accessToken) {
-    const timeRange = "short_term"
-    const limit = 10
-
+async function getTopSongs(accessToken, timeRange, limit) {
     try {
         const response = await fetch(`https://api.spotify.com/v1/me/top/tracks?time_range=${timeRange}&limit=${limit}&offset=0`, {
             method: "GET",
@@ -346,7 +377,7 @@ async function getTopSongs(accessToken) {
         throw error
     }
 }
-
+// TODO: edit top songs schema and save top songs to database
 app.get('/top-songs', async (req, res) => {
     const { username } = req.query || null;
     const currentUser = await findUser(username)
@@ -354,7 +385,7 @@ app.get('/top-songs', async (req, res) => {
     const accessToken = spotifyUser.accessToken
 
     try {
-        const data = await getTopSongs(accessToken)
+        const data = await getTopSongs(accessToken, "short_term", 10)
         const songInfo = data.items.map(item => ({
             songName: item.name,
             artistNames: item.artists.map(artist => artist.name)
@@ -366,8 +397,8 @@ app.get('/top-songs', async (req, res) => {
             const refreshData = await refreshResponse.json()
             const newAccessToken = refreshData.newAccessToken
 
-            const data = await getTopSongs(newAccessToken)
-            const songInfo = data.results.items.map(item => ({
+            const data = await getTopSongs(newAccessToken, "short_term", 10)
+            const songInfo = data.items.map(item => ({
                 songName: item.name,
                 artistNames: item.artists.map(artist => artist.name)
               }));
