@@ -16,7 +16,7 @@
     "react-bootstrap": "^2.10.4",
     "react-dom": "^18.3.1",
     "react-password-checklist": "^1.6.0",
-    "react-router-dom": "^6.24.1"
+    "react-router-dom": "^6.24.0"
   },
   "devDependencies": {
     "@types/react": "^18.3.3",

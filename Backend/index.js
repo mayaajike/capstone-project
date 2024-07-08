@@ -4,7 +4,6 @@ const cors = require('cors')
 const express = require('express')
 const app = express()
 app.use(express.json());
-
 const corsOptions = {
     origin: 'http://localhost:5173',
     credentials: true,
@@ -16,6 +15,8 @@ const { PrismaClient } = require('@prisma/client')
 const prisma = new PrismaClient()
 const PORT = process.env.PORT || 3000
 const jwt = require('jsonwebtoken')
+
+
 const hashPassword = async (password) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
@@ -41,7 +42,7 @@ const validatePassword = (password, passwordAgain) => {
 
 
 async function findUser(username) {
-    const user = await prisma.user.findFirst({
+    const user = await prisma.user.findUnique({
         where: {
             username: username,
         },
@@ -115,11 +116,7 @@ app.get('/users', async (req, res) => {
     res.json(users)
 })
 
-app.get('/spotify-accounts', async (req, res) => {
-    const accounts = await prisma.spotifyAccount.findMany()
-    res.json(accounts)
-})
-
+// route to create a new user.
 app.post('/users/signup', async (req, res) => {
     const { firstName, lastName, username, email, password, passwordAgain } = req.body;
     try {
@@ -131,7 +128,7 @@ app.post('/users/signup', async (req, res) => {
             if (isValid.errorCode === 401) return res.status(401).json({ error: isValid.errorMessage})
         }
             const hashedPassword = await hashPassword(password);
-            const user = { username: username }
+            const user = { username: username, password: password }
             const accessToken = generateAccessToken(user)
             const refreshToken = jwt.sign(user, process.env.REFRESH_TOKEN_SECRET)
             const newUser = await prisma.user.create({
@@ -151,7 +148,9 @@ app.post('/users/signup', async (req, res) => {
     }
 });
 
+// route for user login
 app.post('/users/login', async (req, res) => {
+
     const { username, password } = req.body;
     try {
         const existingUser = await findUser(username)
@@ -178,6 +177,7 @@ app.post('/users/login', async (req, res) => {
     }
 })
 
+
 app.post('/logout', async (req, res) => {
     const { username } = req.body;
 
@@ -203,30 +203,22 @@ app.post('/token', async (req, res) => {
         const existingUser = await findUser(username)
         const currentUser = { username: username }
         if (refreshToken === null || existingUser.refreshToken !== refreshToken) return res.status(401).json({ error: "Invalid token" })
-        jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, async (err, user) => {
+        jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
             if (err) return res.status(403).json({ error: "Invalid Token" })
-            newAccessToken =  generateAccessToken(currentUser)
+            existingUser.accessToken = generateAccessToken(user)
         })
+
         existingUser.accessToken = newAccessToken
         await updateUser(username, newAccessToken, refreshToken)
         return res.status(200).json({ message: "Token refreshed" })
     } catch (error) {
         res.status(500).json({ error: 'Server error'})
     }
+
 })
 
-const clientId = process.env.SPOTIFY_CLIENT_ID
-const clientSecret = process.env.SPOTIFY_CLIENT_SECRET
-const redirectUri = 'http://localhost:5173/'
-
-async function generateRandomString(length) {
-    let text = '';
-    const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-
-    for (let i = 0; i < length; i++) {
-      text += possible.charAt(Math.floor(Math.random() * possible.length));
-    }
-    return text;
+function generateAccessToken(user){
+    return jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "3s" })
 }
 
 app.get('/authorize', async (req, res) => {
@@ -283,9 +275,10 @@ app.get('/callback', async (req, res) => {
 });
 
 app.post('/save-tokens', async (req, res) => {
-    const { username, accessToken, refreshToken, userId, spotifyUrl } = req.body;
-    const currentUser = await findUser(username)
+  const { username, accessToken, refreshToken, userId, spotifyUrl } = req.body;
+  const currentUser = await findUser(username)
     try {
+
         const existingSpotifyAccount = await findSpotifyUser(currentUser.id)
         if (!existingSpotifyAccount) {
             await prisma.spotifyAccount.create({
@@ -318,7 +311,7 @@ app.post('/save-tokens', async (req, res) => {
         console.log(error)
         res.status(500).json({ error: "Server error"})
     }
-})
+}
 
 
 async function getTopSongs(accessToken) {

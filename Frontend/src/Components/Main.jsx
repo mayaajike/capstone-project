@@ -1,5 +1,4 @@
-import React, { useState, useContext, useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom'
+import React, { useState, useContext, useEffect } from 'react';
 import { UserContext } from '../UserContext';
 import NavBar from './NavBar';
 
@@ -197,5 +196,6 @@ export default function Main() {
             <h1>Welcome {username}, Log in Successful!</h1>
             <a href='#' onClick={handleAuthorization}>Login to Spotify</a>
         </>
+
     )
 }
