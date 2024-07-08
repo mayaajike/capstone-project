@@ -67,4 +67,5 @@ model TopSongs {
   user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String
   trackId   String    //spotify track id
+  name      String    //name of track
 }
