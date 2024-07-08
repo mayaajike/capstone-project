@@ -1,17 +1,22 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import NavBar from '../Components/NavBar'
 import '../CSS/Profile.css'
 
 export default function Profile({ searchResults, setSearchResults, searchQuery, setSearchQuery, handleSearch }) {
     // const [username, setUsername] = useState("")
-    const user = JSON.parse(localStorage.getItem('user'));
+    const currentUser = JSON.parse(localStorage.getItem('user'));
+    const [user, setUser] = useState(currentUser)
     const username = user.username;
     const [topSongs, setTopSongs] = useState([])
     let currentAccessToken = localStorage.getItem("accessToken")
+    const hasRunRef = useRef(false);
 
     useEffect(() => {
-        getTopSongs()
-    }, [])
+        if (!hasRunRef.current && topSongs.length < 1) {
+            hasRunRef.current = true;
+            getTopSongs()
+        }
+    }, [user])
 
     const refreshToken = async () => {
         const refreshToken = localStorage.getItem('refreshToken')
@@ -51,9 +56,9 @@ export default function Profile({ searchResults, setSearchResults, searchQuery, 
         try {
             const response = await fetch(`http://localhost:4700/top-songs?username=${username}`, {
                 method: "GET",
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${currentAccessToken}`
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${currentAccessToken}`
                 }
             })
             if (response.ok) {

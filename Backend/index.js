@@ -355,7 +355,7 @@ app.post('/save-tokens', async (req, res) => {
 })
 
 
-async function getTopSongs(accessToken, timeRange, limit) {
+async function getTopSongs(username, accessToken, timeRange, limit) {
     try {
         const response = await fetch(`https://api.spotify.com/v1/me/top/tracks?time_range=${timeRange}&limit=${limit}&offset=0`, {
             method: "GET",
@@ -369,6 +369,11 @@ async function getTopSongs(accessToken, timeRange, limit) {
             if (!data || !data.items) {
                 throw new Error("Invalid response from Spotify API");
             }
+            const songInfo = data.items.map(item => ({
+                songName: item.name,
+                artistNames: item.artists.map(artist => artist.name)
+              }));
+            const topSongs = await saveTopSongs(username, songInfo)
             return data
         } else {
             throw new Error(`Failed to fetch top tracks: ${response.status} ${response.statusText}`);
@@ -377,7 +382,35 @@ async function getTopSongs(accessToken, timeRange, limit) {
         throw error
     }
 }
-// TODO: edit top songs schema and save top songs to database
+
+async function saveTopSongs(username, songInfo){
+    const user = await findUser(username)
+    const latestTopSongs = await prisma.topSongs.findFirst({
+        where: {
+            userId: user.id
+        },
+        orderBy: {
+            createdAt: 'desc'
+        }
+    });
+
+    if (latestTopSongs && latestTopSongs.createdAt > Date.now() - 4 * 7 * 24 * 60 * 60 * 1000) { return latestTopSongs }
+    const topSongs = await prisma.topSongs.create({
+        data: {
+            tracks: {
+                create: songInfo.map((song) => ({
+                    track: song.songName,
+                    artist: song.artistNames.join(', ')
+                }))
+            },
+            user:{
+                connect: user
+            }
+        }
+    })
+    return topSongs;
+}
+
 app.get('/top-songs', async (req, res) => {
     const { username } = req.query || null;
     const currentUser = await findUser(username)
@@ -385,24 +418,25 @@ app.get('/top-songs', async (req, res) => {
     const accessToken = spotifyUser.accessToken
 
     try {
-        const data = await getTopSongs(accessToken, "short_term", 10)
+        const data = await getTopSongs(username, accessToken, "short_term", 10)
         const songInfo = data.items.map(item => ({
             songName: item.name,
             artistNames: item.artists.map(artist => artist.name)
         }));
-        res.status(200).json({ songInfo: songInfo})
+        res.status(200).json({ songInfo: songInfo })
+
     } catch (error) {
         if (error.message.includes('401')) {
             const refreshResponse = await fetch(`http://localhost:4700/refresh-tokens?userId=${spotifyUser.userId}&refreshToken=${spotifyUser.refreshToken}`)
             const refreshData = await refreshResponse.json()
             const newAccessToken = refreshData.newAccessToken
 
-            const data = await getTopSongs(newAccessToken, "short_term", 10)
+            const data = await getTopSongs(username, newAccessToken, "short_term", 10)
             const songInfo = data.items.map(item => ({
                 songName: item.name,
                 artistNames: item.artists.map(artist => artist.name)
               }));
-            res.status(200).json({ songInfo: songInfo})
+            res.status(200).json({ songInfo: songInfo })
         } else {
             res.status(500).json({ error: "Server error" })
         }
