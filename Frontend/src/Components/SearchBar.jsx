@@ -3,7 +3,7 @@ import '../CSS/SearchBar.css'
 import { useNavigate } from 'react-router-dom'
 import SearchProfile from './SearchProfile';
 
-export default function SearchBar({ handleSearch, searchResults, setSearchResults, searchQuery, setSearchQuery, username }) {
+export default function SearchBar({ handleSearch, searchResults, setSearchResults, searchQuery, setSearchQuery, username, refreshToken }) {
     const [isOpen, setIsOpen] = useState(false);
     const [searchDisplay, setSearchDisplay] = useState([]);
     const accessToken = localStorage.getItem("accessToken");

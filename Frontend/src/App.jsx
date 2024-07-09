@@ -40,19 +40,47 @@ export default function App() {
     }
 }
 
+  const refreshToken = async () => {
+    const refreshToken = localStorage.getItem('refreshToken')
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (user && user.username) {
+      const username = user.username;
+      if (!refreshToken) {
+        alert("Refresh token is missing");
+        return;
+      }
+      try {
+          const response = await fetch('http://localhost:4700/token', {
+              method: "POST",
+              headers: {
+                  "Content-Type": 'application/json'
+              },
+              body: JSON.stringify({ username, refreshToken })
+          });
+          const data = await response.json()
+          const { message, accessToken } = data;
+          localStorage.setItem('accessToken', accessToken);
+          localStorage.setItem('refreshToken', refreshToken);
+      } catch(error) {
+          alert('Failed to refresh token ' + error)
+      }
+    }
+  }
+
+
   return (
     <div className='app'>
       <UserContext.Provider value = {{ user, updateUser }}>
         <BrowserRouter>
           <Routes>
             <Route path='/' element={user ? <Main searchResults={searchResults} setSearchResults={setSearchResults}
-            searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearch={handleSearch}/> : <Login />} />
+            searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearch={handleSearch} refreshToken={refreshToken}/> : <Login />} />
             <Route path='/login' element={<Login />} />
             <Route path='/signup' element={<Signup />} />
             <Route path='/profile' element={<Profile searchResults={searchResults} setSearchResults={setSearchResults}
-            searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearch={handleSearch}/>} />
+            searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearch={handleSearch} refreshToken={refreshToken}/>} />
             <Route path='/history' element={<History searchResults={searchResults} setSearchResults={setSearchResults}
-            searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearch={handleSearch}/>} />
+            searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearch={handleSearch} refreshToken={refreshToken}/>} />
             <Route path='/search-profile' element={<SearchProfile />} />
           </Routes>
         </BrowserRouter>

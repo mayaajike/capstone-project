@@ -209,7 +209,7 @@ app.post('/token', async (req, res) => {
         })
         existingUser.accessToken = newAccessToken
         await updateUser(username, newAccessToken, refreshToken)
-        return res.status(200).json({ message: "Token refreshed" })
+        return res.status(200).json({ message: "Token refreshed", accessToken: newAccessToken })
     } catch (error) {
         res.status(500).json({ error: 'Server error'})
     }
@@ -272,7 +272,7 @@ app.get('/authorize', async (req, res) => {
     try {
         const state = await generateRandomString(16);
         const responseType = "code"
-        const scope = 'user-read-private user-read-email user-top-read user-library-read';
+        const scope = 'user-read-private user-read-email user-top-read user-library-read user-read-recently-played';
         const authorizationUrl = `https://accounts.spotify.com/authorize?response_type=${responseType}&client_id=${clientId}&scope=${scope}&redirect_uri=${redirectUri}&state=${state}`
         res.status(200).json({ authorizationUrl: authorizationUrl })
     }catch (error) {
@@ -374,12 +374,14 @@ async function getTopSongs(username, accessToken, timeRange, limit) {
                 artistNames: item.artists.map(artist => artist.name)
               }));
             const topSongs = await saveTopSongs(username, songInfo)
-            return data
+            return topSongs
         } else {
+            console.log(response.status, response.statusText)
             throw new Error(`Failed to fetch top tracks: ${response.status} ${response.statusText}`);
         }
     } catch (error) {
-        throw error
+        console.error('Error fetching top songs:', error);
+        throw new Error('Failed to fetch top songs');
     }
 }
 
@@ -411,21 +413,43 @@ async function saveTopSongs(username, songInfo){
     return topSongs;
 }
 
+async function getUsersTopSongs (username) {
+    const currentUser = findUser(username)
+    const topSongs = await prisma.topSongs.findFirst({
+        where: {
+            user: currentUser
+        }
+    })
+    const tracks = await prisma.tracks.findMany({
+        where: {
+            topSongsId: topSongs.id
+        }
+    })
+    return tracks
+}
+
 app.get('/top-songs', async (req, res) => {
-    const { username } = req.query || null;
+    const { username } = req.query || null
     const currentUser = await findUser(username)
+    if (!currentUser) {
+        res.status(404).json({ error: "User not found" });
+        return;
+      }
     const spotifyUser = await findSpotifyUser(currentUser.id)
+    if (!spotifyUser) {
+        res.status(404).json({ error: "User has no connect Spotify account." })
+        return
+    }
     const accessToken = spotifyUser.accessToken
-
     try {
+        const topSongs = await getUsersTopSongs(username)
+        if (topSongs) {
+            res.status(200).json({ topSongs: topSongs })
+            return;
+        }
         const data = await getTopSongs(username, accessToken, "short_term", 10)
-        const songInfo = data.items.map(item => ({
-            songName: item.name,
-            artistNames: item.artists.map(artist => artist.name)
-        }));
-        res.status(200).json({ songInfo: songInfo })
-
-    } catch (error) {
+        res.status(200).json({ topSongs: data})
+    } catch (error){
         if (error.message.includes('401')) {
             const refreshResponse = await fetch(`http://localhost:4700/refresh-tokens?userId=${spotifyUser.userId}&refreshToken=${spotifyUser.refreshToken}`)
             const refreshData = await refreshResponse.json()
@@ -435,7 +459,7 @@ app.get('/top-songs', async (req, res) => {
             const songInfo = data.items.map(item => ({
                 songName: item.name,
                 artistNames: item.artists.map(artist => artist.name)
-              }));
+                }));
             res.status(200).json({ songInfo: songInfo })
         } else {
             res.status(500).json({ error: "Server error" })
@@ -443,9 +467,10 @@ app.get('/top-songs', async (req, res) => {
     }
 })
 
+
 app.get('/refresh-tokens', async (req, res) => {
     const { userId, refreshToken } = req.query
-    const scope = "user-top-read"
+    const scope = "user-top-read user-library-read user-read-recently-played"
 
     try {
         if (!refreshToken) {
@@ -473,6 +498,7 @@ app.get('/refresh-tokens', async (req, res) => {
         res.status(500).json({ error: "Server error" })
     }
 })
+
 
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`)

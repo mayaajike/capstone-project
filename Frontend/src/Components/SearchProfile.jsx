@@ -15,6 +15,14 @@ export default function SearchProfile() {
         getTopSongs()
     }, [])
 
+    setInterval(async () => {
+        const currentTime = new Date().getTime() / 1000;
+        const tokenExpiration = localStorage.getItem("tokenExpiration");
+        if ( currentTime >= tokenExpiration) {
+            await refreshToken();
+        }
+    }, 30000)
+
     const getTopSongs = async () => {
     try {
         const response = await fetch(`http://localhost:4700/top-songs?username=${username}`, {
@@ -28,10 +36,11 @@ export default function SearchProfile() {
             const data = await response.json()
             setTopSongs(data)
         } else {
-            alert("Unable to fetch top songs")
+            return
         }
     } catch (error) {
-        alert("Unable to fetch top songs ", error)
+        console.log(error)
+        return;
     }}
 
     return (
@@ -45,12 +54,16 @@ export default function SearchProfile() {
 
             <div className='top-songs-container'>
                 <h3>Top Songs</h3>
-                {topSongs.songInfo && topSongs.songInfo.map((song, index) => (
-                    <div key={index}>
-                    <h2 className='song-title'>{song.songName}</h2>
-                    <p className='artist-name'>{song.artistNames.join(', ')}</p>
-                    </div>
-                ))}
+                {topSongs && topSongs.topSongs ? (
+                    topSongs.topSongs.map((song, index) => (
+                        <div key={index}>
+                        <h2 className='song-title'>{song.track}</h2>
+                        <p className='artist-name'>{song.artist}</p>
+                        </div>
+                    ))
+                ) : (
+                    <p>Spotify not synced</p>
+                )}
             </div>
         </div>
     )

@@ -3,7 +3,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import '../CSS/NavBar.css';
 import SearchBar from './SearchBar';
 
-export default function NavBar({ handleLogout, handleSearch, searchResults, setSearchResults, searchQuery, setSearchQuery, username }) {
+export default function NavBar({ handleLogout, handleSearch, searchResults, setSearchResults, searchQuery, setSearchQuery, username, refreshToken }) {
     const navItems = [
         { label: "Home", href: '/' },
         { label: "History", href: '/history'},
@@ -16,7 +16,8 @@ export default function NavBar({ handleLogout, handleSearch, searchResults, setS
             setSearchResults={setSearchResults}
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
-            username={username} />
+            username={username}
+            refreshToken={refreshToken}/>
         ), className: "search-bar"}
     ]
 
