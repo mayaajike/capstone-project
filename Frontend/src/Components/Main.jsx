@@ -2,13 +2,13 @@ import React, { useState, useContext, useEffect } from 'react';
 import { UserContext } from '../UserContext';
 import NavBar from './NavBar';
 
-
-export default function Main() {
+export default function Main({ searchResults, setSearchResults, searchQuery, setSearchQuery, handleSearch, refreshToken }) {
     const [username, setUsername] = useState('');
     const [code, setCode] = useState('')
     const hasRunRef = useRef(false);
     const navigate = useNavigate();
     let currentAccessToken = localStorage.getItem('accessToken')
+
 
     useEffect(()=> {
         getUsername();
@@ -21,45 +21,33 @@ export default function Main() {
           }
     }, [code])
 
-    const refreshToken = async () => {
-        const refreshToken = localStorage.getItem('refreshToken')
-        const user = JSON.parse(localStorage.getItem('user'));
-        const username = user.username;
-        if (!refreshToken) {
-            alert("Refresh token is missing");
-            return;
-        }
-        try {
-            const response = await fetch('http://localhost:4700/token', {
-                method: "POST",
-                headers: {
-                    "Content-Type": 'application/json'
-                },
-                body: JSON.stringify({ username, refreshToken })
-            });
-            const data = await response.json()
-            const { message, accessToken } = data;
-            currentAccessToken = accessToken;
-            localStorage.setItem('accessToken', accessToken);
-            localStorage.setItem('refreshToken', refreshToken);
-            getUsername();
-        } catch(error) {
-            alert('Failed to refresh token ' + error)
-        }
-    }
-
     setInterval(async () => {
         const currentTime = new Date().getTime() / 1000;
         const tokenExpiration = localStorage.getItem("tokenExpiration");
         if ( currentTime >= tokenExpiration) {
             await refreshToken();
         }
-    }, 30000)
+    }, 120000)
+
 
     const getUsername = async () => {
         const user = JSON.parse(localStorage.getItem("user"))
         const username = user.username;
         setUsername(username)
+
+        const response = await fetch("http://localhost:4700", {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${currentAccessToken}`
+            },
+            credentials: "include"
+        })
+
+        if (response.ok) {
+            const data = await response.json()
+            localStorage.setItem("tokenExpiration", data.exp)
+        }
     }
 
     const handleLogout = async (e) => {
@@ -192,7 +180,8 @@ export default function Main() {
 
     return (
         <>
-            <NavBar handleLogout={handleLogout} />
+            <NavBar handleLogout={handleLogout} handleSearch={handleSearch} searchResults={searchResults}
+            setSearchResults={setSearchResults} searchQuery={searchQuery} setSearchQuery={setSearchQuery} refreshToken={refreshToken}/>
             <h1>Welcome {username}, Log in Successful!</h1>
             <a href='#' onClick={handleAuthorization}>Login to Spotify</a>
         </>

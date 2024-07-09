@@ -4,6 +4,7 @@ const cors = require('cors')
 const express = require('express')
 const app = express()
 app.use(express.json());
+
 const corsOptions = {
     origin: 'http://localhost:5173',
     credentials: true,
@@ -15,8 +16,6 @@ const { PrismaClient } = require('@prisma/client')
 const prisma = new PrismaClient()
 const PORT = process.env.PORT || 3000
 const jwt = require('jsonwebtoken')
-
-
 const hashPassword = async (password) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
@@ -42,7 +41,7 @@ const validatePassword = (password, passwordAgain) => {
 
 
 async function findUser(username) {
-    const user = await prisma.user.findUnique({
+    const user = await prisma.user.findFirst({
         where: {
             username: username,
         },
@@ -116,7 +115,11 @@ app.get('/users', async (req, res) => {
     res.json(users)
 })
 
-// route to create a new user.
+app.get('/spotify-accounts', async (req, res) => {
+    const accounts = await prisma.spotifyAccount.findMany()
+    res.json(accounts)
+})
+
 app.post('/users/signup', async (req, res) => {
     const { firstName, lastName, username, email, password, passwordAgain } = req.body;
     try {
@@ -128,7 +131,7 @@ app.post('/users/signup', async (req, res) => {
             if (isValid.errorCode === 401) return res.status(401).json({ error: isValid.errorMessage})
         }
             const hashedPassword = await hashPassword(password);
-            const user = { username: username, password: password }
+            const user = { username: username }
             const accessToken = generateAccessToken(user)
             const refreshToken = jwt.sign(user, process.env.REFRESH_TOKEN_SECRET)
             const newUser = await prisma.user.create({
@@ -148,9 +151,7 @@ app.post('/users/signup', async (req, res) => {
     }
 });
 
-// route for user login
 app.post('/users/login', async (req, res) => {
-
     const { username, password } = req.body;
     try {
         const existingUser = await findUser(username)
@@ -177,7 +178,6 @@ app.post('/users/login', async (req, res) => {
     }
 })
 
-
 app.post('/logout', async (req, res) => {
     const { username } = req.body;
 
@@ -203,22 +203,68 @@ app.post('/token', async (req, res) => {
         const existingUser = await findUser(username)
         const currentUser = { username: username }
         if (refreshToken === null || existingUser.refreshToken !== refreshToken) return res.status(401).json({ error: "Invalid token" })
-        jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
+        jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, async (err, user) => {
             if (err) return res.status(403).json({ error: "Invalid Token" })
-            existingUser.accessToken = generateAccessToken(user)
+            newAccessToken =  generateAccessToken(currentUser)
         })
-
         existingUser.accessToken = newAccessToken
         await updateUser(username, newAccessToken, refreshToken)
-        return res.status(200).json({ message: "Token refreshed" })
+        return res.status(200).json({ message: "Token refreshed", accessToken: newAccessToken })
     } catch (error) {
         res.status(500).json({ error: 'Server error'})
     }
-
 })
 
-function generateAccessToken(user){
-    return jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "3s" })
+
+app.post('/search', async (req, res) =>{
+    const { searchQuery } = req.body;
+    const results = await prisma.user.findMany({
+        where: {
+            OR: [
+                {
+                    firstName: {
+                        contains: searchQuery,
+                        mode: 'insensitive'
+                    }
+                },
+                {
+                    lastName: {
+                        contains: searchQuery,
+                        mode: 'insensitive'
+                    }
+                },
+                {
+                    username: {
+                        contains: searchQuery,
+                        mode: 'insensitive'
+                    }
+        }]}})
+    res.status(200).json({ results: results })
+})
+
+app.get('/profile', async (req, res) => {
+    const { username } = req.query;
+    const user = await findUser(username);
+
+    if (user) {
+        res.status(200).json({ user: user})
+    } else {
+        res.status(500).json({ error: "Server error"})
+    }
+})
+
+const clientId = process.env.SPOTIFY_CLIENT_ID
+const clientSecret = process.env.SPOTIFY_CLIENT_SECRET
+const redirectUri = 'http://localhost:5173/'
+
+async function generateRandomString(length) {
+    let text = '';
+    const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+
+    for (let i = 0; i < length; i++) {
+      text += possible.charAt(Math.floor(Math.random() * possible.length));
+    }
+    return text;
 }
 
 app.get('/authorize', async (req, res) => {
@@ -226,7 +272,7 @@ app.get('/authorize', async (req, res) => {
     try {
         const state = await generateRandomString(16);
         const responseType = "code"
-        const scope = 'user-read-private user-read-email user-top-read user-library-read';
+        const scope = 'user-read-private user-read-email user-top-read user-library-read user-read-recently-played';
         const authorizationUrl = `https://accounts.spotify.com/authorize?response_type=${responseType}&client_id=${clientId}&scope=${scope}&redirect_uri=${redirectUri}&state=${state}`
         res.status(200).json({ authorizationUrl: authorizationUrl })
     }catch (error) {
@@ -275,10 +321,9 @@ app.get('/callback', async (req, res) => {
 });
 
 app.post('/save-tokens', async (req, res) => {
-  const { username, accessToken, refreshToken, userId, spotifyUrl } = req.body;
-  const currentUser = await findUser(username)
+    const { username, accessToken, refreshToken, userId, spotifyUrl } = req.body;
+    const currentUser = await findUser(username)
     try {
-
         const existingSpotifyAccount = await findSpotifyUser(currentUser.id)
         if (!existingSpotifyAccount) {
             await prisma.spotifyAccount.create({
@@ -303,21 +348,14 @@ app.post('/save-tokens', async (req, res) => {
                 }
             })
         }
-        res.status(200).json({
-            message: "Tokens saved",
-            accessToken: accessToken
-        })
+        res.status(200).json({ message: "Tokens saved" })
     } catch (error) {
-        console.log(error)
-        res.status(500).json({ error: "Server error"})
+        res.status(500).json({ error: "Server error" })
     }
-}
+})
 
 
-async function getTopSongs(accessToken) {
-    const timeRange = "short_term"
-    const limit = 10
-
+async function getTopSongs(username, accessToken, timeRange, limit) {
     try {
         const response = await fetch(`https://api.spotify.com/v1/me/top/tracks?time_range=${timeRange}&limit=${limit}&offset=0`, {
             method: "GET",
@@ -331,49 +369,108 @@ async function getTopSongs(accessToken) {
             if (!data || !data.items) {
                 throw new Error("Invalid response from Spotify API");
             }
-            return data
+            const songInfo = data.items.map(item => ({
+                songName: item.name,
+                artistNames: item.artists.map(artist => artist.name)
+              }));
+            const topSongs = await saveTopSongs(username, songInfo)
+            return topSongs
         } else {
+            console.log(response.status, response.statusText)
             throw new Error(`Failed to fetch top tracks: ${response.status} ${response.statusText}`);
         }
     } catch (error) {
-        throw error
+        console.error('Error fetching top songs:', error);
+        throw new Error('Failed to fetch top songs');
     }
 }
 
-app.get('/top-songs', async (req, res) => {
-    const { username } = req.query || null;
-    const currentUser = await findUser(username)
-    const spotifyUser = await findSpotifyUser(currentUser.id)
-    const accessToken = spotifyUser.accessToken
+async function saveTopSongs(username, songInfo){
+    const user = await findUser(username)
+    const latestTopSongs = await prisma.topSongs.findFirst({
+        where: {
+            userId: user.id
+        },
+        orderBy: {
+            createdAt: 'desc'
+        }
+    });
 
+    if (latestTopSongs && latestTopSongs.createdAt > Date.now() - 4 * 7 * 24 * 60 * 60 * 1000) { return latestTopSongs }
+    const topSongs = await prisma.topSongs.create({
+        data: {
+            tracks: {
+                create: songInfo.map((song) => ({
+                    track: song.songName,
+                    artist: song.artistNames.join(', ')
+                }))
+            },
+            user:{
+                connect: user
+            }
+        }
+    })
+    return topSongs;
+}
+
+async function getUsersTopSongs (username) {
+    const currentUser = findUser(username)
+    const topSongs = await prisma.topSongs.findFirst({
+        where: {
+            user: currentUser
+        }
+    })
+    const tracks = await prisma.tracks.findMany({
+        where: {
+            topSongsId: topSongs.id
+        }
+    })
+    return tracks
+}
+
+app.get('/top-songs', async (req, res) => {
+    const { username } = req.query || null
+    const currentUser = await findUser(username)
+    if (!currentUser) {
+        res.status(404).json({ error: "User not found" });
+        return;
+      }
+    const spotifyUser = await findSpotifyUser(currentUser.id)
+    if (!spotifyUser) {
+        res.status(404).json({ error: "User has no connect Spotify account." })
+        return
+    }
+    const accessToken = spotifyUser.accessToken
     try {
-        const data = await getTopSongs(accessToken)
-        const songInfo = data.items.map(item => ({
-            songName: item.name,
-            artistNames: item.artists.map(artist => artist.name)
-        }));
-        res.status(200).json({ songInfo: songInfo})
-    } catch (error) {
+        const topSongs = await getUsersTopSongs(username)
+        if (topSongs) {
+            res.status(200).json({ topSongs: topSongs })
+            return;
+        }
+        const data = await getTopSongs(username, accessToken, "short_term", 10)
+        res.status(200).json({ topSongs: data})
+    } catch (error){
         if (error.message.includes('401')) {
             const refreshResponse = await fetch(`http://localhost:4700/refresh-tokens?userId=${spotifyUser.userId}&refreshToken=${spotifyUser.refreshToken}`)
             const refreshData = await refreshResponse.json()
             const newAccessToken = refreshData.newAccessToken
 
-            const data = await getTopSongs(newAccessToken)
-            const songInfo = data.results.items.map(item => ({
+            const data = await getTopSongs(username, newAccessToken, "short_term", 10)
+            const songInfo = data.items.map(item => ({
                 songName: item.name,
                 artistNames: item.artists.map(artist => artist.name)
-              }));
-            res.status(200).json({ songInfo: songInfo})
+                }));
+            res.status(200).json({ songInfo: songInfo })
         } else {
             res.status(500).json({ error: "Server error" })
         }
     }
 })
 
+
 app.get('/refresh-tokens', async (req, res) => {
     const { userId, refreshToken } = req.query
-    const scope = "user-top-read"
+    const scope = "user-top-read user-library-read user-read-recently-played"
 
     try {
         if (!refreshToken) {
@@ -401,6 +498,7 @@ app.get('/refresh-tokens', async (req, res) => {
         res.status(500).json({ error: "Server error" })
     }
 })
+
 
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`)

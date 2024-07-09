@@ -1,42 +1,22 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import NavBar from '../Components/NavBar'
 import '../CSS/Profile.css'
 
-export default function Profile() {
-    const user = JSON.parse(localStorage.getItem('user'));
+export default function Profile({ searchResults, setSearchResults, searchQuery, setSearchQuery, handleSearch, refreshToken }) {
+    // const [username, setUsername] = useState("")
+    const currentUser = JSON.parse(localStorage.getItem('user'));
+    const [user, setUser] = useState(currentUser)
     const username = user.username;
     const [topSongs, setTopSongs] = useState([])
     let currentAccessToken = localStorage.getItem("accessToken")
+    const hasRunRef = useRef(false);
 
     useEffect(() => {
-        getTopSongs()
-    }, [])
-
-    const refreshToken = async () => {
-        const refreshToken = localStorage.getItem('refreshToken')
-        const user = JSON.parse(localStorage.getItem('user'));
-        const username = user.username;
-        if (!refreshToken) {
-            alert("Refresh token is missing");
-            return;
+        if (!hasRunRef.current && topSongs.length < 1) {
+            hasRunRef.current = true;
+            getTopSongs()
         }
-        try {
-            const response = await fetch('http://localhost:4700/token', {
-                method: "POST",
-                headers: {
-                    "Content-Type": 'application/json'
-                },
-                body: JSON.stringify({ username, refreshToken })
-            });
-            const data = await response.json()
-            const { message, accessToken } = data;
-            currentAccessToken = accessToken;
-            localStorage.setItem('accessToken', accessToken);
-            localStorage.setItem('refreshToken', refreshToken);
-        } catch(error) {
-            alert('Failed to refresh token ' + error)
-        }
-    }
+    }, [user])
 
     setInterval(async () => {
         const currentTime = new Date().getTime() / 1000;
@@ -50,14 +30,13 @@ export default function Profile() {
         try {
             const response = await fetch(`http://localhost:4700/top-songs?username=${username}`, {
                 method: "GET",
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${currentAccessToken}`
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${currentAccessToken}`
                 }
             })
             if (response.ok) {
                 const data = await response.json()
-                console.log(data)
                 setTopSongs(data)
             } else {
                 alert("Unable to fetch top songs")
@@ -66,10 +45,11 @@ export default function Profile() {
             alert("Unable to fetch top songs ", error)
         }
     }
-    console.log(topSongs)
+
     return(
         <div className='profile-page'>
-            <NavBar />
+            <NavBar username={username} searchResults={searchResults} setSearchResults={setSearchResults}
+             searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearch={handleSearch} />
             <div className='main-content'>
                 <img className='profile-pic' src='https://picsum.photos/200/300' />
                 <h3 className='username'>@{username}</h3>
@@ -78,10 +58,10 @@ export default function Profile() {
 
             <div className='top-songs-container'>
                 <h3>Top Songs</h3>
-                {topSongs.songInfo && topSongs.songInfo.map((song, index) => (
+                {topSongs && topSongs.topSongs && topSongs.topSongs.map((song, index) => (
                     <div key={index}>
-                    <h2 className='song-title'>{song.songName}</h2>
-                    <p className='artist-name'>{song.artistNames.join(', ')}</p>
+                    <h2 className='song-title'>{song.track}</h2>
+                    <p className='artist-name'>{song.artist}</p>
                     </div>
                 ))}
             </div>
