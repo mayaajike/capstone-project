@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useContext } from 'react'
 import '../CSS/Profile.css'
 import { useLocation } from 'react-router-dom'
 import NavBar from './NavBar'
+import { RefreshTokenContext } from '../Context/RefreshTokenContext'
+import { LogoutContext } from '../Context/LogoutContext'
 
 
 export default function SearchProfile() {
@@ -10,6 +12,8 @@ export default function SearchProfile() {
     const data = location.state
     const username = data.user.username
     const accessToken = localStorage.getItem("accessToken")
+    const refreshToken = useContext(RefreshTokenContext)
+    const handleLogout = useContext(LogoutContext)
 
     useEffect(() => {
         getTopSongs()

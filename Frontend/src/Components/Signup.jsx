@@ -1,6 +1,6 @@
 import React, { useState, useContext } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { UserContext } from '../UserContext';
+import { UserContext } from '../Context/UserContext';
 import PasswordChecklist from 'react-password-checklist';
 import '../CSS/Signup.css'
 

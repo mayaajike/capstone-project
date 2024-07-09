@@ -1,15 +1,18 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useContext } from 'react'
 import NavBar from '../Components/NavBar'
 import '../CSS/Profile.css'
+import { RefreshTokenContext } from '../Context/RefreshTokenContext';
+import { LogoutContext } from '../Context/LogoutContext';
 
-export default function Profile({ searchResults, setSearchResults, searchQuery, setSearchQuery, handleSearch, refreshToken }) {
-    // const [username, setUsername] = useState("")
+export default function Profile({ searchResults, setSearchResults, searchQuery, setSearchQuery, handleSearch }) {
     const currentUser = JSON.parse(localStorage.getItem('user'));
     const [user, setUser] = useState(currentUser)
     const username = user.username;
     const [topSongs, setTopSongs] = useState([])
     let currentAccessToken = localStorage.getItem("accessToken")
     const hasRunRef = useRef(false);
+    const refreshToken = useContext(RefreshTokenContext)
+    const handleLogout = useContext(LogoutContext)
 
     useEffect(() => {
         if (!hasRunRef.current && topSongs.length < 1) {

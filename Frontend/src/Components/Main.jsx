@@ -1,15 +1,18 @@
 import React, { useState, useContext, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom'
-import { UserContext } from '../UserContext';
+import { UserContext } from '../Context/UserContext';
 import NavBar from './NavBar';
+import { RefreshTokenContext } from '../Context/RefreshTokenContext';
+import { LogoutContext } from '../Context/LogoutContext';
 
-export default function Main({ searchResults, setSearchResults, searchQuery, setSearchQuery, handleSearch, refreshToken }) {
+export default function Main({ searchResults, setSearchResults, searchQuery, setSearchQuery, handleSearch }) {
     const [username, setUsername] = useState('');
     const [code, setCode] = useState('')
     const hasRunRef = useRef(false);
     const navigate = useNavigate();
     let currentAccessToken = localStorage.getItem('accessToken')
-
+    const refreshToken = useContext(RefreshTokenContext)
+    const handleLogout = useContext(LogoutContext)
 
     useEffect(()=> {
         getUsername();
@@ -48,33 +51,6 @@ export default function Main({ searchResults, setSearchResults, searchQuery, set
         if (response.ok) {
             const data = await response.json()
             localStorage.setItem("tokenExpiration", data.exp)
-        }
-    }
-
-    const handleLogout = async (e) => {
-        e.preventDefault();
-        const user = JSON.parse(localStorage.getItem('user'));
-        const username = user.username;
-        try {
-            const response = await fetch('http://localhost:4700/logout', {
-                method: "POST",
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${currentAccessToken}`,
-                },
-                credentials: 'include',
-                body: JSON.stringify({ username }),
-            })
-
-            if (response.ok) {
-                localStorage.clear();
-                setUsername('')
-                navigate('/login')
-            } else {
-                alert('Logout failed')
-            }
-        } catch (error) {
-            alert('Logout failed: ' + error)
         }
     }
 
