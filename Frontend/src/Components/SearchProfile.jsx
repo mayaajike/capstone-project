@@ -14,18 +14,34 @@ export default function SearchProfile() {
     const accessToken = localStorage.getItem("accessToken")
     const refreshToken = useContext(RefreshTokenContext)
     const handleLogout = useContext(LogoutContext)
+    const [recentlyPlayed, setRecentlyPlayed] = useState([])
+    const currentUser = JSON.parse(localStorage.getItem('user'));
+    const currentUsername = currentUser.username
+    const [spotifyUser, setSpotifyUser] = useState([])
+    const [friend, setFriend] = useState(false)
+    const [confirmedFriend, setConfirmedFriend] = useState(false)
+    const [initiatedFriend, setInitiatedFriend] = useState(false)
+    const [receivedFriend, setReceivedFriend] = useState(false)
 
     useEffect(() => {
         getTopSongs()
+        getRecentlyPlayed()
+        getSpotify()
+        getFriends()
     }, [])
 
-    setInterval(async () => {
-        const currentTime = new Date().getTime() / 1000;
-        const tokenExpiration = localStorage.getItem("tokenExpiration");
-        if ( currentTime >= tokenExpiration) {
-            await refreshToken();
-        }
-    }, 30000)
+    useEffect(() => {
+        const checkTokenExpiration = async () => {
+            const currentTime = new Date().getTime() / 1000;
+            const tokenExpiration = localStorage.getItem("tokenExpiration");
+            if (currentTime >= tokenExpiration) {
+                await refreshToken();
+            }
+            setTimeout(checkTokenExpiration, 120000);
+        };
+        checkTokenExpiration();
+        return () => clearTimeout(checkTokenExpiration);
+    }, []);
 
     const getTopSongs = async () => {
     try {
@@ -43,31 +59,149 @@ export default function SearchProfile() {
             return
         }
     } catch (error) {
-        console.log(error)
-        return;
+        throw error
     }}
 
+    const getRecentlyPlayed = async () => {
+        try {
+            const response = await fetch(`http://localhost:4700/recently-played?username=${username}`, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${accessToken}`
+                }
+            })
+            if (response.ok) {
+                const data = await response.json()
+                setRecentlyPlayed(data)
+            }
+        } catch (error) {
+            throw error
+        }
+    }
+    const getSpotify = async () => {
+        try {
+            const response = await fetch(`http://localhost:4700/spotify-user?username=${username}`, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${accessToken}`
+                }
+            })
+            if (response.ok) {
+                const data = await response.json()
+                setSpotifyUser(data)
+            }
+        } catch (error) {
+            throw error
+        }
+    }
+
+    const getFriends = async () => {
+        try {
+            const response = await fetch(`http://localhost:4700/friends?username=${currentUsername}`, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${accessToken}`
+                }
+            })
+            if (response.ok) {
+                const dataResponse = await response.json()
+                console.log(dataResponse)
+                const confirmedFriends = dataResponse.confirmedFriends
+                const initiatedFriendships = dataResponse.initiatedFriendships
+                const receivedFriendships = dataResponse.receivedFriendships
+                if (confirmedFriends.length > 0 && await confirmedFriends.some(friend => friend.confirmedId === data.user.id)){
+                    setConfirmedFriend(true)
+                }
+                if (initiatedFriendships.length > 0 && await initiatedFriendships.some(friend => friend.initiatorId === currentUser.id) && await initiatedFriendships.some(friend => friend.receiverId === data.user.id))
+                {
+                    setInitiatedFriend(true)
+                }
+                if (receivedFriendships.length > 0 && await receivedFriendships.some(friend => friend.receiverId === currentUser.id) && await receivedFriendships.some(friend => friend.initiatorId === data.user.id)) {
+                    setReceivedFriend(true)
+                }
+            }
+        } catch (error) {
+            throw error
+        }
+    }
+    const addFriend = async () => {
+        try {
+            const response = await fetch(`http://localhost:4700/add-friend?username=${currentUsername}&friend=${username}`,{
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${accessToken}`
+                }
+            })
+            if (response.ok) {
+                const data = await response.json()
+                console.log(data)
+                setFriend(true)
+                getFriends()
+            }
+        } catch (error) {
+            throw error
+        }
+    }
     return (
         <div className='profile-page'>
-             <NavBar username={username}  />
+             <NavBar username={username}/>
             <div className='main-content'>
-                <img className='profile-pic' src='https://picsum.photos/200/300' />
-                <h3 className='username'>@{username}</h3>
-                <h4 className='follower-count'> x followers</h4>
-            </div>
+                <div className='profile-content'>
+                    <img className='profile-pic' src='https://picsum.photos/200/300' />
+                    <h3 className='username'>@{username}</h3>
+                    <h4 className='follower-count'> x followers</h4>
+                    {spotifyUser && spotifyUser.spotify && spotifyUser.spotify.spotifyUrl &&
+                        <a className="spotify-url" href={spotifyUser.spotify.spotifyUrl} target="_blank" style={{ color: 'green' }}>
+                            Spotify Profile
+                        </a>
+                    }
+                    <a className='follow-button' onClick={addFriend} style={{ color: 'white' }}>
+                        {confirmedFriend ? 'Friend' :
+                        initiatedFriend ? 'Added' :
+                        receivedFriend ? 'Accept' :
+                        (friend ? 'Added' : 'Follow +')}
+                    </a>
+                </div>
 
-            <div className='top-songs-container'>
-                <h3>Top Songs</h3>
-                {topSongs && topSongs.topSongs ? (
-                    topSongs.topSongs.map((song, index) => (
-                        <div key={index}>
-                        <h2 className='song-title'>{song.track}</h2>
-                        <p className='artist-name'>{song.artist}</p>
-                        </div>
-                    ))
-                ) : (
-                    <p>Spotify not synced</p>
-                )}
+                <div className='recently-played'>
+                    <div className='recently-played-title-container'>
+                        <h3 className='recently-played-title'>Recently Played Songs</h3>
+                    </div>
+
+                    <div className='recently-played-songs'>
+                        {recentlyPlayed && recentlyPlayed.tracks ? (
+                            recentlyPlayed.tracks.map((track, index) => (
+                            <div key={index}>
+                                <div className='song'>
+                                    <p className='song-name'>{track.name}</p>
+                                    <p className='artist-names'>{track.artists.map((artist) => artist.name).join(", ")}</p>
+                                </div>
+                            </div>
+                        ))) : (
+                            <div className='song'>
+                                <p style={{ justifyContent: 'center', textAlign: 'center' }}>Spotify not synced</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                <div className='top-songs-container'>
+                    <h3>Top Songs</h3>
+                    {topSongs && topSongs.topSongs ? (
+                        topSongs.topSongs.map((song, index) => (
+                            <div key={index}>
+                            <h2 className='song-title'>{song.track}</h2>
+                            <p className='artist-name'>{song.artist.join(', ')}</p>
+                            </div>
+                        ))
+                    ) : (
+                        <p>Spotify not synced</p>
+                    )}
+                </div>
             </div>
         </div>
     )

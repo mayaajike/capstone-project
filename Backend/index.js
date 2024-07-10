@@ -376,11 +376,9 @@ async function getTopSongs(username, accessToken, timeRange, limit) {
             const topSongs = await saveTopSongs(username, songInfo)
             return topSongs
         } else {
-            console.log(response.status, response.statusText)
             throw new Error(`Failed to fetch top tracks: ${response.status} ${response.statusText}`);
         }
     } catch (error) {
-        console.error('Error fetching top songs:', error);
         throw new Error('Failed to fetch top songs');
     }
 }
@@ -397,13 +395,14 @@ async function saveTopSongs(username, songInfo){
     });
 
     if (latestTopSongs && latestTopSongs.createdAt > Date.now() - 4 * 7 * 24 * 60 * 60 * 1000) { return latestTopSongs }
+    const topSongsData = songInfo.map((song) => ({
+        track: song.songName,
+        artist: song.artistNames
+    }))
     const topSongs = await prisma.topSongs.create({
         data: {
             tracks: {
-                create: songInfo.map((song) => ({
-                    track: song.songName,
-                    artist: song.artistNames.join(', ')
-                }))
+                create: topSongsData
             },
             user:{
                 connect: user
@@ -420,12 +419,16 @@ async function getUsersTopSongs (username) {
             user: currentUser
         }
     })
-    const tracks = await prisma.tracks.findMany({
-        where: {
-            topSongsId: topSongs.id
-        }
-    })
-    return tracks
+    if (topSongs) {
+        const tracks = await prisma.tracks.findMany({
+            where: {
+                topSongsId: topSongs.id
+            }
+        })
+        return tracks
+    } else {
+        return topSongs;
+    }
 }
 
 app.get('/top-songs', async (req, res) => {
@@ -451,9 +454,7 @@ app.get('/top-songs', async (req, res) => {
         res.status(200).json({ topSongs: data})
     } catch (error){
         if (error.message.includes('401')) {
-            const refreshResponse = await fetch(`http://localhost:4700/refresh-tokens?userId=${spotifyUser.userId}&refreshToken=${spotifyUser.refreshToken}`)
-            const refreshData = await refreshResponse.json()
-            const newAccessToken = refreshData.newAccessToken
+            const newAccessToken = await refreshSpotifyToken(spotifyUser)
 
             const data = await getTopSongs(username, newAccessToken, "short_term", 10)
             const songInfo = data.items.map(item => ({
@@ -467,6 +468,12 @@ app.get('/top-songs', async (req, res) => {
     }
 })
 
+async function refreshSpotifyToken(spotifyUser) {
+    const response = await fetch(`http://localhost:4700/refresh-tokens?userId=${spotifyUser.userId}&refreshToken=${spotifyUser.refreshToken}`)
+    const data =  await response.json()
+    const newAccessToken = data.newAccessToken
+    return newAccessToken
+}
 
 app.get('/refresh-tokens', async (req, res) => {
     const { userId, refreshToken } = req.query
@@ -499,6 +506,127 @@ app.get('/refresh-tokens', async (req, res) => {
     }
 })
 
+app.get('/recently-played', async (req, res) => {
+    const { username } = req.query || null
+    const currentUser = await findUser(username)
+    const spotifyUser = await findSpotifyUser(currentUser.id)
+    if (spotifyUser) {
+        const accessToken = spotifyUser.accessToken
+        try {
+            const response = await fetch('https://api.spotify.com/v1/me/player/recently-played', {
+            method: "GET",
+            headers: {
+                "Content-Type": 'application/json',
+                "Authorization": `Bearer ${accessToken}`
+            }})
+            if (response.ok) {
+                const data = await response.json()
+                const tracks = data.items.map((item) => item.track)
+                res.status(200).json({ tracks: tracks})
+            } else if(response.status === 401) {
+                const newAccessToken = await refreshSpotifyToken(spotifyUser)
+
+                const response = await fetch('https://api.spotify.com/v1/me/player/recently-played', {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": 'application/json',
+                        "Authorization": `Bearer ${newAccessToken}`
+                    }})
+                if (response.ok) {
+                    const data = await response.json()
+                    const tracks = data.items.map((item) => item.track)
+                    res.status(200).json({ tracks: tracks})
+                }
+            } else {
+                res.status(500).json({ error: "Failed to fetch recently played songs." })
+            }
+        } catch (error) {
+            res.status(500).json({ error: "Server error"})
+        }
+    } else {
+        res.status(404).json({ error: "User not found" })
+    }
+})
+
+app.get('/spotify-user', async (req, res) => {
+    const { username } = req.query || null
+    const currentUser = await findUser(username)
+    try {
+        const spotifyUser = await findSpotifyUser(currentUser.id)
+        res.status(200).json({ spotify: spotifyUser })
+    } catch (error) {
+       res.status(500).json({ error: "Server error" })
+    }
+})
+
+app.post('/add-friend',  async (req, res) => {
+    const { username, friend } = req.query || null;
+    const currentUser = await findUser(username)
+    const newFriend = await findUser(friend)
+    const friends = await prisma.user.findUnique({
+        where: {
+            username: username,
+        },
+        include: {
+            initiatedFriendships: true,
+            receivedFriendships: true,
+            confirmedFriends: true
+        }
+    })
+    const confirmedFriends = friends.confirmedFriends
+    const initiatedFriendships = friends.initiatedFriendships
+    const receivedFriendships = friends.receivedFriendships
+    const isAlreadyInitiated = initiatedFriendships.some(friendship => friendship.initiatorId === currentUser.id && friendship.receiverId === newFriend.id);
+    const isAlreadyReceived = receivedFriendships.some(friendship => friendship.receiverId === currentUser.id && friendship.initiatorId === newFriend.id);
+    const isFriendAlreadyConfirmed = confirmedFriends.some(friend => friend.confirmedId === newFriend.id);
+    if ( !isAlreadyInitiated && !isAlreadyReceived && !isFriendAlreadyConfirmed) {
+        await prisma.friendship.create({
+            data:{
+                initiator: {
+                    connect: {
+                        id: currentUser.id
+                    }
+                },
+                receiver: {
+                    connect: {
+                        id: newFriend.id
+                    }
+                },
+                initiatorConfirmed: true
+            }
+        })
+    }
+    res.status(200).json({
+        message: "Friendship Initiated!",
+        initiatedFriendships: initiatedFriendships,
+    })
+})
+
+app.get('/friends', async (req, res) => {
+    const { username } = req.query
+    try {
+        const friends = await prisma.user.findUnique({
+            where: {
+                username: username
+            },
+            include: {
+                initiatedFriendships: true,
+                receivedFriendships: true,
+                confirmedFriends: true
+            }
+        })
+        const confirmedFriends = friends.confirmedFriends
+        const initiatedFriendships = friends.initiatedFriendships
+        const receivedFriendships = friends.receivedFriendships
+        res.status(200).json({
+            confirmedFriends: confirmedFriends,
+            initiatedFriendships: initiatedFriendships,
+            receivedFriendships: receivedFriendships
+        })
+    } catch (error) {
+        res.status(500).json({ error: "Server error" })
+    }
+})
 
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`)

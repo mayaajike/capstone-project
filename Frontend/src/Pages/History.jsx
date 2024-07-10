@@ -6,13 +6,18 @@ import { LogoutContext } from '../Context/LogoutContext';
 export default function History({ searchResults, setSearchResults, searchQuery, setSearchQuery, handleSearch }) {
     const refreshToken = useContext(RefreshTokenContext)
     const handleLogout = useContext(LogoutContext)
-    setInterval(async () => {
-        const currentTime = new Date().getTime() / 1000;
-        const tokenExpiration = localStorage.getItem("tokenExpiration");
-        if ( currentTime >= tokenExpiration) {
-            await refreshToken();
-        }
-    }, 30000)
+    useEffect(() => {
+        const checkTokenExpiration = async () => {
+            const currentTime = new Date().getTime() / 1000;
+            const tokenExpiration = localStorage.getItem("tokenExpiration");
+            if (currentTime >= tokenExpiration) {
+                await refreshToken();
+            }
+            setTimeout(checkTokenExpiration, 120000);
+        };
+        checkTokenExpiration();
+        return () => clearTimeout(checkTokenExpiration);
+    }, []);
 
     return (
         <>

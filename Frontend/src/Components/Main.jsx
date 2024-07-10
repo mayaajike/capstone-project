@@ -25,13 +25,18 @@ export default function Main({ searchResults, setSearchResults, searchQuery, set
           }
     }, [code])
 
-    setInterval(async () => {
-        const currentTime = new Date().getTime() / 1000;
-        const tokenExpiration = localStorage.getItem("tokenExpiration");
-        if ( currentTime >= tokenExpiration) {
-            await refreshToken();
-        }
-    }, 120000)
+    useEffect(() => {
+        const checkTokenExpiration = async () => {
+            const currentTime = new Date().getTime() / 1000;
+            const tokenExpiration = localStorage.getItem("tokenExpiration");
+            if (currentTime >= tokenExpiration) {
+                await refreshToken();
+            }
+            setTimeout(checkTokenExpiration, 120000);
+        };
+        checkTokenExpiration();
+        return () => clearTimeout(checkTokenExpiration);
+    }, []);
 
 
     const getUsername = async () => {

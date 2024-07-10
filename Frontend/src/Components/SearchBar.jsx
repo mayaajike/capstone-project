@@ -42,7 +42,7 @@ export default function SearchBar({ handleSearch, searchResults, setSearchResult
 
         if (response.ok) {
             const data = await response.json();
-            <SearchProfile refreshToken={refreshToken} />
+            <SearchProfile refreshToken={refreshToken} handleSearch={handleSearch} searchResults={searchResults} setSearchResults={setSearchResults} searchQuery={searchQuery} setSearchQuery={setSearchQuery}/>
             navigate('/search-profile', { state: data });
         }
     }
