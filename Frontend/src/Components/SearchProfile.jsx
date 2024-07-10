@@ -108,7 +108,6 @@ export default function SearchProfile() {
             })
             if (response.ok) {
                 const dataResponse = await response.json()
-                console.log(dataResponse)
                 const confirmedFriends = dataResponse.confirmedFriends
                 const initiatedFriendships = dataResponse.initiatedFriendships
                 const receivedFriendships = dataResponse.receivedFriendships
@@ -138,7 +137,6 @@ export default function SearchProfile() {
             })
             if (response.ok) {
                 const data = await response.json()
-                console.log(data)
                 setFriend(true)
                 getFriends()
             }
