@@ -1,4 +1,4 @@
-import React, { useContext } from 'react'
+import React, { useContext, useEffect } from 'react'
 import NavBar from '../Components/NavBar'
 import { RefreshTokenContext } from '../Context/RefreshTokenContext';
 import { LogoutContext } from '../Context/LogoutContext';

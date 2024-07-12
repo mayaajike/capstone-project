@@ -71,36 +71,6 @@ export default function App() {
     }
   }
 
-//   const handleLogout = async (e) => {
-//     const navigate = useNavigate();
-//     e.preventDefault();
-//     const user = JSON.parse(localStorage.getItem('user'));
-//     const username = user.username;
-//     const accessToken = localStorage.getItem("accessToken")
-//     try {
-//         const response = await fetch('http://localhost:4700/logout', {
-//             method: "POST",
-//             headers: {
-//                 'Content-Type': 'application/json',
-//                 Authorization: `Bearer ${accessToken}`,
-//             },
-//             credentials: 'include',
-//             body: JSON.stringify({ username }),
-//         })
-
-//         if (response.ok) {
-//             localStorage.clear();
-//             setUser(null)
-//             navigate('/login')
-//         } else {
-//             alert('Logout failed')
-//         }
-//     } catch (error) {
-//         alert('Logout failed: ' + error)
-//     }
-// }
-
-
   return (
     <div className='app'>
       <UserContext.Provider value = {{ user, updateUser }}>

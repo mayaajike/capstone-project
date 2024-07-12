@@ -72,7 +72,7 @@ export default function Profile({ searchResults, setSearchResults, searchQuery, 
                 setRecentlyPlayed(data)
             }
         } catch (error) {
-            console.log(error)
+            throw error
         }
     }
 
@@ -90,20 +90,19 @@ export default function Profile({ searchResults, setSearchResults, searchQuery, 
                 setSpotifyUser(data)
             }
         } catch (error) {
-            console.log(error)
             throw error
         }
     }
 
     return(
         <div className='profile-page'>
-            <NavBar username={username} searchResults={searchResults} setSearchResults={setSearchResults}
+            <NavBar searchResults={searchResults} setSearchResults={setSearchResults}
              searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearch={handleSearch} />
             <div className='main-content'>
                 <div className='profile-content'>
                     <img className='profile-pic' src='https://picsum.photos/200/300' />
                     <h3 className='username'>@{username}</h3>
-                    <h4 className='follower-count'> x followers</h4>
+                    <h4 className='follower-count'> x friends</h4>
                     {spotifyUser && spotifyUser.spotify && spotifyUser.spotify.spotifyUrl &&
                         <a className="spotify-url" href={spotifyUser.spotify.spotifyUrl} target="_blank" style={{ color: 'green' }}>
                             Spotify Profile

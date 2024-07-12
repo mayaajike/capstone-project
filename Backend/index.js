@@ -49,6 +49,15 @@ async function findUser(username) {
     return user;
 }
 
+async function findWithId(userId) {
+    const user = await prisma.user.findFirst({
+        where: {
+            id: userId,
+        },
+    })
+    return user
+}
+
 async function updateUser(username, accessToken, refreshToken) {
     await prisma.user.update({
         where: {
@@ -108,6 +117,12 @@ function authenticateToken(req, res, next) {
 
 app.get('/', authenticateToken, async (req, res) => {
     res.json(req.user)
+})
+
+app.get('/user', async (req, res) => {
+    const { userId } = req.query;
+    const user = await findWithId(userId);
+    res.status(200).json({ user: user})
 })
 
 app.get('/users', async (req, res) => {
@@ -284,7 +299,6 @@ app.get('/callback', async (req, res) => {
     const code = req.query.code || null;
     const state = req.query.state || null;
     const stateMismatch = 'state_mismatch'
-
     try {
         if (state === null) {
             res.redirect(`/#?error=${stateMismatch}`)
@@ -625,6 +639,68 @@ app.get('/friends', async (req, res) => {
         })
     } catch (error) {
         res.status(500).json({ error: "Server error" })
+    }
+})
+
+app.get('/accept-request', async (req, res) => {
+    const { userId, friendId } = req.query
+    const currentUser = await findWithId(userId)
+    const friend = await findWithId(friendId)
+    let friendshipId;
+    try {
+        const friends = await prisma.user.findUnique({
+            where: {
+                username: currentUser.username
+            },
+            include: {
+                initiatedFriendships: {
+                    include: {
+                        initiator: true,
+                        receiver: true,
+                    }
+                },
+                receivedFriendships: {
+                    include: {
+                        initiator: true,
+                        receiver: true,
+                    }
+                },
+                confirmedFriends: {
+                    include: {
+                        initiator: true,
+                        receiver: true,
+                    }
+                }
+            }
+        })
+        const receivedFriendships = friends.receivedFriendships
+        if (receivedFriendships.length > 0) {
+            receivedFriendships.map((friendship) => {
+                if (friendship.initiatorId === friend.id){
+                    friendshipId = friendship.id
+                    friendship.receiverConfirmed = true
+                    friendship.confirmed = true
+                    friendship.confirmedId = currentUser.id
+                }
+            })
+        }
+        await prisma.friendship.update({
+            where: {
+                id: friendshipId
+            },
+            data: {
+                receiverConfirmed: true,
+                confirmed: true,
+                confirmedFriend: {
+                    connect: {
+                        id: currentUser.id
+                    }
+                }
+            }
+        })
+        res.status(200).json({ receivedFriendships: friends.receivedFriendships })
+    } catch (error){
+        res.status(500).json({ error: "Internal Server Error" })
     }
 })
 

@@ -111,14 +111,19 @@ export default function SearchProfile() {
                 const confirmedFriends = dataResponse.confirmedFriends
                 const initiatedFriendships = dataResponse.initiatedFriendships
                 const receivedFriendships = dataResponse.receivedFriendships
-                if (confirmedFriends.length > 0 && await confirmedFriends.some(friend => friend.confirmedId === data.user.id)){
+                if (confirmedFriends.length > 0 && await confirmedFriends.some(friend => {
+                    if (friend.confirmed){
+                        friend.confirmedId === data.user.id
+                    }
+                })){
                     setConfirmedFriend(true)
                 }
-                if (initiatedFriendships.length > 0 && await initiatedFriendships.some(friend => friend.initiatorId === currentUser.id) && await initiatedFriendships.some(friend => friend.receiverId === data.user.id))
-                {
-                    setInitiatedFriend(true)
-                }
-                if (receivedFriendships.length > 0 && await receivedFriendships.some(friend => friend.receiverId === currentUser.id) && await receivedFriendships.some(friend => friend.initiatorId === data.user.id)) {
+                if (initiatedFriendships.length > 0 && await initiatedFriendships.some(friend => {
+                    if (!friend.confirmed){friend.initiatorId === currentUser.id}}) && await initiatedFriendships.some(friend => {
+                        if (!friend.confirmed){friend.receiverId === data.user.id}})){setInitiatedFriend(true)}
+                if (receivedFriendships.length > 0 && await receivedFriendships.some(friend => {
+                    if (!friend.confirmed){friend.receiverId === currentUser.id}
+                }) && await receivedFriendships.some(friend => {if (!friend.confirmed){friend.initiatorId === data.user.id}})) {
                     setReceivedFriend(true)
                 }
             }
@@ -146,12 +151,12 @@ export default function SearchProfile() {
     }
     return (
         <div className='profile-page'>
-             <NavBar username={username}/>
+             <NavBar />
             <div className='main-content'>
                 <div className='profile-content'>
                     <img className='profile-pic' src='https://picsum.photos/200/300' />
                     <h3 className='username'>@{username}</h3>
-                    <h4 className='follower-count'> x followers</h4>
+                    <h4 className='follower-count'> x friends</h4>
                     {spotifyUser && spotifyUser.spotify && spotifyUser.spotify.spotifyUrl &&
                         <a className="spotify-url" href={spotifyUser.spotify.spotifyUrl} target="_blank" style={{ color: 'green' }}>
                             Spotify Profile
