@@ -1,9 +1,15 @@
+import React, { useContext } from 'react';
 import Nav from 'react-bootstrap/Nav';
 import "bootstrap/dist/css/bootstrap.min.css";
 import '../CSS/NavBar.css';
 import SearchBar from './SearchBar';
+import { RefreshTokenContext } from '../Context/RefreshTokenContext';
+import { LogoutContext } from '../Context/LogoutContext';
 
-export default function NavBar({ handleLogout, handleSearch, searchResults, setSearchResults, searchQuery, setSearchQuery, username, refreshToken }) {
+
+export default function NavBar({ handleSearch, searchResults, setSearchResults, searchQuery, setSearchQuery, username }) {
+    const refreshToken = useContext(RefreshTokenContext)
+    const handleLogout = useContext(LogoutContext)
     const navItems = [
         { label: "Home", href: '/' },
         { label: "History", href: '/history'},

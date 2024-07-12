@@ -1,13 +1,15 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useContext  } from 'react'
 import '../CSS/SearchBar.css'
 import { useNavigate } from 'react-router-dom'
 import SearchProfile from './SearchProfile';
+import { RefreshTokenContext } from '../Context/RefreshTokenContext';
 
-export default function SearchBar({ handleSearch, searchResults, setSearchResults, searchQuery, setSearchQuery, username, refreshToken }) {
+export default function SearchBar({ handleSearch, searchResults, setSearchResults, searchQuery, setSearchQuery, username }) {
     const [isOpen, setIsOpen] = useState(false);
     const [searchDisplay, setSearchDisplay] = useState([]);
     const accessToken = localStorage.getItem("accessToken");
     const navigate = useNavigate()
+    const refreshToken = useContext(RefreshTokenContext)
 
     const handleChange = (event) => {
         setSearchQuery(event.target.value);
@@ -40,6 +42,7 @@ export default function SearchBar({ handleSearch, searchResults, setSearchResult
 
         if (response.ok) {
             const data = await response.json();
+            <SearchProfile refreshToken={refreshToken} handleSearch={handleSearch} searchResults={searchResults} setSearchResults={setSearchResults} searchQuery={searchQuery} setSearchQuery={setSearchQuery}/>
             navigate('/search-profile', { state: data });
         }
     }

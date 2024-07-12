@@ -1,6 +1,6 @@
 import React, { useState, useContext } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { UserContext } from '../UserContext';
+import { UserContext } from '../Context/UserContext';
 import PasswordChecklist from 'react-password-checklist';
 import '../CSS/Signup.css'
 
@@ -29,6 +29,9 @@ export default function Signup() {
             if (response.ok) {
                 const data = await response.json();
                 const loggedInUser = data.user;
+                localStorage.setItem('accessToken', data.user.accessToken);
+                localStorage.setItem('refreshToken', data.user.refreshToken);
+                localStorage.setItem('user', data.user);
 
                 setFirstName('');
                 setLastName('');

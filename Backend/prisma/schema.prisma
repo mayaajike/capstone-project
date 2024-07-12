@@ -21,7 +21,6 @@ model User {
   password             String
   email                String          @unique
   spotifyAccount       SpotifyAccount?
-  nowListening         NowListening[]
   initiatedFriendships Friendship[]    @relation("FriendshipInitiator")
   receivedFriendships  Friendship[]    @relation("FriendshipReceiver")
   confirmedFriends     Friendship[]    @relation("FriendshipConfirmed")
@@ -49,16 +48,8 @@ model Friendship {
   initiatorConfirmed Boolean @default(false) // Confirmation from the initiator
   receiverConfirmed  Boolean @default(false) // Confirmation from the receiver
   confirmed          Boolean @default(false) // True if both sides confirmed
-  confirmedFriend    User    @relation("FriendshipConfirmed", fields: [confirmedId], references: [id], onDelete: Cascade)
-  confirmedId        String
-}
-
-model NowListening {
-  id      String @id @default(uuid())
-  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId  String
-  trackId String //spotify track id
-  @@index([userId])
+  confirmedFriend    User?    @relation("FriendshipConfirmed", fields: [confirmedId], references: [id], onDelete: Cascade)
+  confirmedId        String?
 }
 
 model TopSongs {
@@ -71,9 +62,9 @@ model TopSongs {
 }
 
 model Tracks {
-  id         String    @id @default(uuid())
-  track      String
-  artist     String
-  TopSongs   TopSongs? @relation(fields: [topSongsId], references: [id])
-  topSongsId String?
+  id              String          @id @default(uuid())
+  track           String
+  artist          String[]
+  TopSongs        TopSongs?       @relation(fields: [topSongsId], references: [id])
+  topSongsId      String?
 }

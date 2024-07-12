@@ -5,8 +5,16 @@
 }
 
 .main-content {
+    display: flex;
     flex-grow: 1;
     margin-right: 20px;
+}
+.profile-content {
+    position: fixed;
+    top: 80px;
+    left: 130px;
+    z-index: 1;
+    display: grid;
 }
 
 .profile-pic {
@@ -15,34 +23,47 @@
     border-radius: 50%;
     object-fit: cover;
     position: fixed;
-    top: 100px;
-    left: 90px;
+    top: 80px;
+    left: 130px;
 }
 
 .username {
-    top: 145px;
-    left: 270px;
-    position: absolute;
+    top: 125px;
+    left: 320px;
+    position: fixed;
     padding: 10px;
     margin-bottom: 3px;
 }
 
 .follower-count {
-    top: 167px;
-    left: 270px;
-    position: absolute;
+    top: 150px;
+    left: 330px;
+    position: fixed;
     font-size: 20px;
     font-weight: light;
     padding: 20px;
 }
 
+.spotify-url {
+    top: 175px;
+    left: 330px;
+    position: fixed;
+    font-size: 16px;
+    font-weight: light;
+    padding: 20px;
+}
+
 .top-songs-container {
+    display: flex;
+    flex-direction: column;
     width: 300px;
     padding: 20px;
     background-color: #f9f9f9;
     border-radius: 10px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    margin-right: 90px;
+    right: 90px;
+    top: 270px;
+    position: absolute;
   }
 
 .song-item {
@@ -61,4 +82,71 @@
     font-size: 1em;
     color: #666;
     margin: 0px 0 5px 0;
+}
+
+.song {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    background-color: lightgrey;
+    border: 2px solid lightgrey;
+    padding: 10px;
+    font-size: 18px;
+    border-radius: 5px;
+    margin: 8px;
+    width: 800px;
+    height: 60px;
+    justify-self: start;
+}
+
+.song-name,
+.artist-names {
+    margin: 0;
+}
+
+.recently-played-songs {
+    display: flex;
+    flex-shrink: 1;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    margin-left: 130px;
+    overflow-y: auto;
+    max-height: 600px;
+}
+
+.recently-played-songs::-webkit-scrollbar {
+    display: none;
+}
+
+.recently-played {
+    margin-top: 250px;
+}
+
+.recently-played-title {
+    position: relative;
+    font-size: 32px;
+    justify-self: left;
+    margin-left: 200px;
+}
+
+.recently-played-title-container {
+    display: grid;
+    margin-top: 20px;
+    margin-bottom: 10px;
+    align-items: flex-start;
+}
+
+
+.follow-button {
+    text-decoration: none;
+    padding: 10px;
+    background-color: blue;
+    border-radius: 10px;
+    z-index: 1;
+    left: 1000px;
+    top: 80px;
+    position: relative;
+    font-weight: bold;
+    font-size: 17px;
 }
