@@ -14,43 +14,53 @@ datasource db {
 }
 
 model User {
-  id                   String          @id @default(uuid())
-  firstName            String
-  lastName             String
-  username             String          @unique
-  password             String
-  email                String          @unique
-  spotifyAccount       SpotifyAccount?
-  initiatedFriendships Friendship[]    @relation("FriendshipInitiator")
-  receivedFriendships  Friendship[]    @relation("FriendshipReceiver")
-  confirmedFriends     Friendship[]    @relation("FriendshipConfirmed")
-  topSongs             TopSongs[]
-  accessToken          String?
-  refreshToken         String?
+  id                    String          @id @default(uuid())
+  firstName             String
+  lastName              String
+  username              String          @unique
+  password              String
+  email                 String          @unique
+  spotifyAccount        SpotifyAccount?
+  initiatedFriendships  Friendship[]             @relation("FriendshipInitiator")
+  receivedFriendships   Friendship[]             @relation("FriendshipReceiver")
+  confirmedFriendships1 ConfirmedFriendship[]    @relation("ConfirmedFriendshipUser1")
+  confirmedFriendships2 ConfirmedFriendship[]    @relation("ConfirmedFriendshipUser2")
+  topSongs              TopSongs[]
+  accessToken           String?
+  refreshToken          String?
 }
 
 model SpotifyAccount {
   id           String @id @default(uuid())
   user         User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId       String @unique
-  spotifyId    String // User's Spotify ID
-  accessToken  String // Access token for API access
-  refreshToken String // Refresh token for API access
+  spotifyId    String
+  accessToken  String
+  refreshToken String
   spotifyUrl   String
 }
 
 model Friendship {
-  id                 String  @id @default(uuid())
-  initiator          User    @relation("FriendshipInitiator", fields: [initiatorId], references: [id], onDelete: Cascade)
-  initiatorId        String
-  receiver           User    @relation("FriendshipReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
-  receiverId         String
-  initiatorConfirmed Boolean @default(false) // Confirmation from the initiator
-  receiverConfirmed  Boolean @default(false) // Confirmation from the receiver
-  confirmed          Boolean @default(false) // True if both sides confirmed
-  confirmedFriend    User?    @relation("FriendshipConfirmed", fields: [confirmedId], references: [id], onDelete: Cascade)
-  confirmedId        String?
+  id                      String                @id @default(uuid())
+  initiator               User                  @relation("FriendshipInitiator", fields: [initiatorId], references: [id], onDelete: Cascade)
+  initiatorId             String
+  receiver                User                  @relation("FriendshipReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  receiverId              String
+  initiatorConfirmed      Boolean               @default(false) // Confirmation from the initiator
+  receiverConfirmed       Boolean               @default(false) // Confirmation from the receiver
+  confirmedFriendship     ConfirmedFriendship?
+  confirmedFriendshipsId  String?
 }
+
+ model ConfirmedFriendship {
+  id            String      @id @default(uuid())
+  Friendship    Friendship  @relation(fields: [friendshipId], references: [id])
+  friendshipId  String      @unique
+  user1         User        @relation("ConfirmedFriendshipUser1", fields: [user1Id], references: [id], onDelete: Cascade)
+  user1Id       String
+  user2         User        @relation("ConfirmedFriendshipUser2", fields: [user2Id], references: [id], onDelete: Cascade)
+  user2Id       String
+ }
 
 model TopSongs {
   id        String   @id @default(uuid())
