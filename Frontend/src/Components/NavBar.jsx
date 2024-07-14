@@ -47,7 +47,7 @@ export default function NavBar({ handleSearch, searchResults, setSearchResults, 
                 const receivedFriendships = data.receivedFriendships
                 let received = 0;
                 receivedFriendships.map(async (friendship) => {
-                    if (!friendship.confirmed) {
+                    if (!friendship.receiverConfirmed) {
                         received += 1
                         const username = await getUsername(friendship.initiatorId)
                     }
@@ -101,11 +101,47 @@ export default function NavBar({ handleSearch, searchResults, setSearchResults, 
         { label: "Friend Requests", component: <FriendRequestsBadge />, className: "requests" }
     ]
 
-    const acceptFriendRequest = async () => {
+    const acceptFriendRequest = async (friend) => {
         try {
-            const response = await fetch(`http://localhost:4700/accept-request?userId=${user.id}`)
-        } catch (error) {
+            const response = await fetch("http://localhost:4700/accept-request", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${accessToken}`
+                },
+                body: JSON.stringify({ username: username, friend: friend })
+            })
+            if (response.ok) {
+                const data = await response.json()
+                getFriendRequests()
+                if (friendRequestsList){
+                    setFriendRequestsList((prevList) => prevList.filter((username) => username !== friend))
+                }
+            }
+        } catch(error) {
+            throw error
+        }
+    }
 
+    const declineFriendRequest = async (friend) => {
+        try {
+            const response = await fetch("http://localhost:4700/decline-request", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${accessToken}`
+                },
+                body: JSON.stringify({ username: username, friend: friend})
+            })
+            if (response.ok) {
+                const data = await response.json()
+                getFriendRequests()
+                if (friendRequestsList) {
+                    setFriendRequestsList((prevList) => prevList.filter((username) => username !== friend))
+                }
+            }
+        } catch (error) {
+            throw error
         }
     }
 
@@ -130,13 +166,10 @@ export default function NavBar({ handleSearch, searchResults, setSearchResults, 
             {showFriendRequests && (
                 <Dropdown.Menu show={showFriendRequests} onClick={(() => setShowFriendRequests(false))} className='friend-requests-menu'>
                     {friendRequestsList && friendRequestsList.map((friend, index) => (
-                        <Dropdown.Item key={index} className='friend-requests-item'>{friend} <MdOutlineCancel className='decline'/> <FaRegCheckCircle className='accept'/></Dropdown.Item>
+                        <Dropdown.Item key={index} className='friend-requests-item'>{friend} <MdOutlineCancel className='decline' onClick={() => declineFriendRequest(friend)}/> <FaRegCheckCircle className='accept' onClick={() => acceptFriendRequest(friend)}/></Dropdown.Item>
                     ))}
                 </Dropdown.Menu>
             )}
         </div>
-
-
-
-  );
+  )
 }

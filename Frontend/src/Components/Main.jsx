@@ -62,7 +62,7 @@ export default function Main({ searchResults, setSearchResults, searchQuery, set
     const handleAuthorization = async(e) => {
         e.preventDefault()
         try {
-            const response = await fetch('http://localhost:4700/authorize', {
+            const response = await fetch('http://localhost:4700/spotify/authorize', {
                 method: "GET",
                 headers: {
                     'Content-Type': 'application/json'
@@ -90,7 +90,7 @@ export default function Main({ searchResults, setSearchResults, searchQuery, set
 
         if (code && state){
             try {
-                const response = await fetch(`http://localhost:4700/callback?code=${code}&state=${state}`,{
+                const response = await fetch(`http://localhost:4700/spotify/callback?code=${code}&state=${state}`,{
                     method: "GET",
                     headers: {
                         "Content-Type": "application/json",
@@ -142,7 +142,7 @@ export default function Main({ searchResults, setSearchResults, searchQuery, set
             if (!accessToken || !refreshToken){
                 throw new Error("Invalid input!")
             }
-            const response = await fetch('http://localhost:4700/save-tokens', {
+            const response = await fetch('http://localhost:4700/spotify/save-tokens', {
                 method: "POST",
                 headers: {
                     "Content-Type": 'application/json',

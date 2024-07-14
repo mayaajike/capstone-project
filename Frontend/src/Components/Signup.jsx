@@ -31,7 +31,7 @@ export default function Signup() {
                 const loggedInUser = data.user;
                 localStorage.setItem('accessToken', data.user.accessToken);
                 localStorage.setItem('refreshToken', data.user.refreshToken);
-                localStorage.setItem('user', data.user);
+                localStorage.setItem('user', JSON.stringify(data.user));
 
                 setFirstName('');
                 setLastName('');

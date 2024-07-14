@@ -139,7 +139,7 @@ async function getUsersTopSongs (username) {
 }
 
 async function refreshSpotifyToken(spotifyUser) {
-    const response = await fetch(`http://localhost:4700/refresh-tokens?userId=${spotifyUser.userId}&refreshToken=${spotifyUser.refreshToken}`)
+    const response = await fetch(`http://localhost:4700/spotify/refresh-tokens?userId=${spotifyUser.userId}&refreshToken=${spotifyUser.refreshToken}`)
     const data =  await response.json()
     const newAccessToken = data.newAccessToken
     return newAccessToken

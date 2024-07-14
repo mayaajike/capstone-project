@@ -202,6 +202,196 @@ app.get('/profile', async (req, res) => {
     }
 })
 
+app.get("/friends", async (req, res) => {
+    const { username } = req.query
+    const currentUser = await findUser(username)
+    const friends = await prisma.user.findFirst({
+        where: {
+            id: currentUser.id
+        },
+        include: {
+            initiatedFriendships: {
+                include: {
+                    initiator: true,
+                    receiver: true,
+                }
+            },
+            receivedFriendships: {
+                include: {
+                    initiator: true,
+                    receiver: true,
+                }
+            },
+            confirmedFriendships1: {
+                include: {
+                    user1: true,
+                    user2: true,
+                }
+            },
+            confirmedFriendships2: {
+                include: {
+                    user1: true,
+                    user2: true
+                }
+            }
+        }
+    })
+    res.status(200).json({
+        initiatedFriendships: friends.initiatedFriendships,
+        receivedFriendships: friends.receivedFriendships,
+        confirmedFriendships1: friends.confirmedFriendships1,
+        confirmedFriendships2: friends.confirmedFriendships2
+    })
+})
+
+
+app.post('/add-friend', async (req, res) => {
+    const { username, friend } = req.body;
+    const currentUser =  await findUser(username)
+    const friendUser = await findUser(friend)
+    let friendshipInitiated = false
+    const currentFriendships = await prisma.user.findFirst({
+        where: {
+            username: username
+        },
+        include: {
+            initiatedFriendships: {
+                include: {
+                    initiator: true,
+                    receiver: true,
+                }
+            }
+        }
+    })
+
+    const initiatedFriendships =  currentFriendships.initiatedFriendships
+    initiatedFriendships.some((friendship) => {
+        if (friendship.initiatorId === currentUser.id && friendship.receiverId === friendUser.id){
+            friendshipInitiated = true
+        }
+    })
+    if (!friendshipInitiated) {
+        const friendship = await prisma.friendship.create({
+            data: {
+                initiatorConfirmed: true,
+                initiator: {
+                    connect: {
+                        id: currentUser.id
+                    }
+                },
+                receiver: {
+                    connect: {
+                        id: friendUser.id
+                    }
+                }
+                }
+        })
+        res.status(200).json({
+            message: "Friend Added!",
+            friendship: friendship
+         })
+    } else {
+        res.status(409).json({ message: "Friendship has already been initiated!" })
+    }
+
+})
+
+app.post("/accept-request", async (req, res) => {
+    const { username, friend } = req.body
+    const currentUser = await findUser(username)
+    const friendUser = await findUser(friend)
+    let friendshipId;
+
+    const friendships = await prisma.user.findFirst({
+        where: {
+            username: username
+        },
+        include: {
+            receivedFriendships: {
+                include: {
+                    initiator: true,
+                    receiver: true,
+                }
+            }
+        }
+    })
+    const receivedFriendships = friendships.receivedFriendships
+    receivedFriendships.some((friendship) => {
+        if (friendship.initiatorId === friendUser.id && friendship.receiverId === currentUser.id) {
+            friendshipId = friendship.id
+        }
+    })
+
+    confirmedFriendship = await prisma.confirmedFriendship.create({
+        data:{
+            Friendship: {
+                connect: {
+                    id: friendshipId
+                }
+            },
+            user1: {
+                connect: {
+                    id: friendUser.id
+                }
+            },
+            user2: {
+                connect: {
+                    id: currentUser.id
+                }
+            }
+        }
+    })
+
+    await prisma.friendship.update({
+        where: {
+            id: friendshipId
+        },
+        data: {
+            receiverConfirmed: true
+        }
+    })
+
+    res.status(200).json({
+        message: "Request Accepted!",
+        confirmedFriendship: confirmedFriendship
+    })
+})
+
+app.post("/decline-request", async (req, res) => {
+    const { username, friend } = req.body;
+    const currentUser = await findUser(username)
+    const friendUser = await findUser(friend)
+    let friendshipId;
+
+    const friendships = await prisma.user.findFirst({
+        where: {
+            username: username
+        },
+        include: {
+            receivedFriendships: {
+                include: {
+                    initiator: true,
+                    receiver: true,
+                }
+            }
+        }
+    })
+    const receivedFriendships = friendships.receivedFriendships
+    receivedFriendships.some((friendship) => {
+        if (friendship.initiatorId === friendUser.id && friendship.receiverId === currentUser.id) {
+            friendshipId = friendship.id
+        }
+    })
+
+    const deletedFriendship = await prisma.friendship.delete({
+        where: {
+            id: friendshipId
+        }
+    })
+
+    res.status(200).json({ message: "Friend Request Declined." })
+})
+
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`)
 })

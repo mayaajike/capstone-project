@@ -49,12 +49,11 @@ model Friendship {
   initiatorConfirmed      Boolean               @default(false) // Confirmation from the initiator
   receiverConfirmed       Boolean               @default(false) // Confirmation from the receiver
   confirmedFriendship     ConfirmedFriendship?
-  confirmedFriendshipsId  String?
 }
 
  model ConfirmedFriendship {
   id            String      @id @default(uuid())
-  Friendship    Friendship  @relation(fields: [friendshipId], references: [id])
+  Friendship    Friendship  @relation(fields: [friendshipId], references: [id], onDelete: Cascade)
   friendshipId  String      @unique
   user1         User        @relation("ConfirmedFriendshipUser1", fields: [user1Id], references: [id], onDelete: Cascade)
   user1Id       String
