@@ -15,6 +15,9 @@ export default function Profile({ searchResults, setSearchResults, searchQuery, 
     const handleLogout = useContext(LogoutContext)
     const [recentlyPlayed, setRecentlyPlayed] = useState([])
     const [spotifyUser, setSpotifyUser] = useState([])
+    const [confirmedFriends, setConfirmedFriends] = useState([])
+    const [initiatedFriends, setInitiatedFriends] = useState([])
+    const [receivedFriends, setReceivedFriends] = useState([])
 
     useEffect(() => {
         if (!hasRunRef.current && topSongs.length < 1) {
@@ -22,6 +25,7 @@ export default function Profile({ searchResults, setSearchResults, searchQuery, 
             getSpotify()
             getTopSongs()
             getRecentlyPlayed()
+            getFriends()
         }
     }, [user])
 
@@ -40,7 +44,7 @@ export default function Profile({ searchResults, setSearchResults, searchQuery, 
 
     const getTopSongs = async () => {
         try {
-            const response = await fetch(`http://localhost:4700/top-songs?username=${username}`, {
+            const response = await fetch(`http://localhost:4700/spotify/top-songs?username=${username}`, {
                 method: "GET",
                 headers: {
                     'Content-Type': 'application/json',
@@ -60,7 +64,7 @@ export default function Profile({ searchResults, setSearchResults, searchQuery, 
 
     const getRecentlyPlayed = async () => {
         try {
-            const response = await fetch(`http://localhost:4700/recently-played?username=${username}`, {
+            const response = await fetch(`http://localhost:4700/spotify/recently-played?username=${username}`, {
                 method: "GET",
                 headers: {
                     "Content-Type": "application/json",
@@ -72,13 +76,13 @@ export default function Profile({ searchResults, setSearchResults, searchQuery, 
                 setRecentlyPlayed(data)
             }
         } catch (error) {
-            console.log(error)
+            throw error
         }
     }
 
     const getSpotify = async () => {
         try {
-            const response = await fetch(`http://localhost:4700/spotify-user?username=${currentUser.username}`, {
+            const response = await fetch(`http://localhost:4700/spotify/spotify-user?username=${currentUser.username}`, {
                 method: "GET",
                 headers: {
                     "Content-Type": "application/json",
@@ -90,20 +94,39 @@ export default function Profile({ searchResults, setSearchResults, searchQuery, 
                 setSpotifyUser(data)
             }
         } catch (error) {
-            console.log(error)
+            throw error
+        }
+    }
+
+    const getFriends = async () => {
+        try {
+            const response = await fetch(`http://localhost:4700/friends?username=${username}`, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${currentAccessToken}`
+                }
+            })
+            if (response.ok) {
+                const data = await response.json()
+                setConfirmedFriends([...data.confirmedFriendships1, ...data.confirmedFriendships2])
+                setInitiatedFriends(data.initiatedFriendships)
+                setReceivedFriends(data.receivedFriendships)
+            }
+        } catch (error) {
             throw error
         }
     }
 
     return(
         <div className='profile-page'>
-            <NavBar username={username} searchResults={searchResults} setSearchResults={setSearchResults}
+            <NavBar searchResults={searchResults} setSearchResults={setSearchResults}
              searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearch={handleSearch} />
             <div className='main-content'>
                 <div className='profile-content'>
                     <img className='profile-pic' src='https://picsum.photos/200/300' />
                     <h3 className='username'>@{username}</h3>
-                    <h4 className='follower-count'> x followers</h4>
+                    <h4 className='follower-count'> {confirmedFriends.length} {confirmedFriends.length <= 1 ? "friend" : "friends"}</h4>
                     {spotifyUser && spotifyUser.spotify && spotifyUser.spotify.spotifyUrl &&
                         <a className="spotify-url" href={spotifyUser.spotify.spotifyUrl} target="_blank" style={{ color: 'green' }}>
                             Spotify Profile

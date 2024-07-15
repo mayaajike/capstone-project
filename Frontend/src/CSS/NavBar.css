@@ -14,3 +14,47 @@
     right: 30px;
     position: fixed;
 }
+
+.requests {
+    right: 400px;
+    position: fixed;
+    font-size: 25px;
+    align-self: center;
+}
+
+.friend-requests-menu {
+    display: flex;
+    flex-direction: column;
+    background-color: lightblue;
+    right: 340px;
+    top: 59px;
+    padding: 10px 25px;
+}
+
+.accept {
+    color: green;
+    font-size: 20px;
+    justify-self: end;
+}
+.accept:hover {
+    background-color: green;
+    color: white;
+    border-radius: 50%;
+}
+.decline {
+    color: red;
+    font-size: 25px;
+    margin-left: 4px;
+    margin-right: 4px;
+}
+.decline:hover {
+    background-color: red;
+    color: white;
+    border-radius: 50%;
+}
+
+.friend-requests-item:hover{
+    background-color: lightblue;
+    color: darkblue;
+    font-weight: bold;
+}

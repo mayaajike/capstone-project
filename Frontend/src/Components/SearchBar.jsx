@@ -17,8 +17,8 @@ export default function SearchBar({ handleSearch, searchResults, setSearchResult
         setIsOpen(true)
         handleFilter(event.target.value);
         if (event.target.value === ''){
-          setSearchResults([]);
-          setIsOpen(false)
+            setSearchResults([]);
+            setIsOpen(false)
         }
     }
 
@@ -50,7 +50,7 @@ export default function SearchBar({ handleSearch, searchResults, setSearchResult
     return(
         <div>
             <div className='search'>
-                <input type='search' placeholder='Search...' id="search-bar" onChange={handleChange}/>
+                <input type='search' placeholder='Search...' id="search-bar" onChange={handleChange} />
             </div>
 
             <div className='search-result'>

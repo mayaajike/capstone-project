@@ -18,13 +18,20 @@
 
 .search-result {
     width: 100%;
-    background-color: grey;
+    background-color: lightblue;
     margin-top: 10px;
+    border-radius: 10px;
 }
 
 .search-result div {
     width: 100%;
     padding: 10px 25px;
-    background-color: grey;
+    background-color: lightblue;
     cursor: pointer;
+    border-radius: 10px;
+}
+
+.search-result div:hover {
+    color: darkblue;
+    font-weight: bold;
 }
