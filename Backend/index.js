@@ -205,43 +205,45 @@ app.get('/profile', async (req, res) => {
 app.get("/friends", async (req, res) => {
     const { username } = req.query
     const currentUser = await findUser(username)
-    const friends = await prisma.user.findFirst({
-        where: {
-            id: currentUser.id
-        },
-        include: {
-            initiatedFriendships: {
-                include: {
-                    initiator: true,
-                    receiver: true,
-                }
+    if (currentUser) {
+        const friends = await prisma.user.findFirst({
+            where: {
+                id: currentUser.id
             },
-            receivedFriendships: {
-                include: {
-                    initiator: true,
-                    receiver: true,
-                }
-            },
-            confirmedFriendships1: {
-                include: {
-                    user1: true,
-                    user2: true,
-                }
-            },
-            confirmedFriendships2: {
-                include: {
-                    user1: true,
-                    user2: true
+            include: {
+                initiatedFriendships: {
+                    include: {
+                        initiator: true,
+                        receiver: true,
+                    }
+                },
+                receivedFriendships: {
+                    include: {
+                        initiator: true,
+                        receiver: true,
+                    }
+                },
+                confirmedFriendships1: {
+                    include: {
+                        user1: true,
+                        user2: true,
+                    }
+                },
+                confirmedFriendships2: {
+                    include: {
+                        user1: true,
+                        user2: true
+                    }
                 }
             }
-        }
-    })
-    res.status(200).json({
-        initiatedFriendships: friends.initiatedFriendships,
-        receivedFriendships: friends.receivedFriendships,
-        confirmedFriendships1: friends.confirmedFriendships1,
-        confirmedFriendships2: friends.confirmedFriendships2
-    })
+        })
+        res.status(200).json({
+            initiatedFriendships: friends.initiatedFriendships,
+            receivedFriendships: friends.receivedFriendships,
+            confirmedFriendships1: friends.confirmedFriendships1,
+            confirmedFriendships2: friends.confirmedFriendships2
+        })
+    }
 })
 
 

@@ -10,7 +10,12 @@ const {
     generateRandomString,
     getUsersTopSongs,
     getTopSongs,
-    refreshSpotifyToken
+    refreshSpotifyToken,
+    topSongs,
+    topArtists,
+    followedArtists,
+    savedTracks,
+    audioFeatures
 } = require('./utils')
 
 const clientId = process.env.SPOTIFY_CLIENT_ID
@@ -26,7 +31,7 @@ router.get('/authorize', async (req, res) => {
     try {
         const state = await generateRandomString(16);
         const responseType = "code"
-        const scope = 'user-read-private user-read-email user-top-read user-library-read user-read-recently-played';
+        const scope = 'user-read-private user-read-email user-top-read user-library-read user-read-recently-played user-follow-read';
         const authorizationUrl = `https://accounts.spotify.com/authorize?response_type=${responseType}&client_id=${clientId}&scope=${scope}&redirect_uri=${redirectUri}&state=${state}`
         res.status(200).json({ authorizationUrl: authorizationUrl })
     }catch (error) {
@@ -108,34 +113,6 @@ router.post('/save-tokens', async (req, res) => {
     }
 })
 
-async function saveTopSongs(username, songInfo){
-    const user = await findUser(username)
-    const latestTopSongs = await prisma.topSongs.findFirst({
-        where: {
-            userId: user.id
-        },
-        orderBy: {
-            createdAt: 'desc'
-        }
-    });
-
-    if (latestTopSongs && latestTopSongs.createdAt > Date.now() - 4 * 7 * 24 * 60 * 60 * 1000) { return latestTopSongs }
-    const topSongsData = songInfo.map((song) => ({
-        track: song.songName,
-        artist: song.artistNames
-    }))
-    const topSongs = await prisma.topSongs.create({
-        data: {
-            tracks: {
-                create: topSongsData
-            },
-            user:{
-                connect: user
-            }
-        }
-    })
-    return topSongs;
-}
 
 router.get('/top-songs', async (req, res) => {
     const fetch = await dynamicImportFetch();
@@ -178,7 +155,7 @@ router.get('/top-songs', async (req, res) => {
 router.get('/refresh-tokens', async (req, res) => {
     const fetch = await dynamicImportFetch();
     const { userId, refreshToken } = req.query
-    const scope = "user-top-read user-library-read user-read-recently-played"
+    const scope = "user-top-read user-library-read user-read-recently-played user-follow-read"
 
     try {
         if (!refreshToken) {
@@ -258,6 +235,72 @@ router.get('/spotify-user', async (req, res) => {
         res.status(200).json({ spotify: spotifyUser })
     } catch (error) {
        res.status(500).json({ error: "Server error" })
+    }
+})
+
+router.get("/compatibility", async (req, res) => {
+    const { username, friend } = req.query
+    const currentUser = await findUser(username)
+    const currentFriend = await findUser(friend)
+    const currentUserSpotify = await findSpotifyUser(currentUser.id)
+    const currentFriendSpotify = await findSpotifyUser(currentFriend.id)
+
+    if (currentUser && currentFriend && currentUserSpotify && currentFriendSpotify) {
+        const currentUserTopSongsData = await topSongs(currentUserSpotify)
+        const currentFriendTopSongsData = await topSongs(currentFriendSpotify)
+        const currentUserTopSongs = currentUserTopSongsData.items.map((song) => [song.name, song.popularity])
+        const currentFriendTopSongs = currentFriendTopSongsData.items.map((song) => [song.name, song.popularity])
+        const currentUserTopSongsIds = currentUserTopSongsData.items.map((song) => (song.id)).join(',')
+        const currentFriendTopSongsIds = currentFriendTopSongsData.items.map((song) => (song.id)).join(',')
+
+
+        const currentUserTopArtistsData = await topArtists(currentUserSpotify)
+        const currentFriendTopArtistsData = await topArtists(currentFriendSpotify)
+        const currentUserTopArtists = currentUserTopArtistsData.items.map((artist) => [artist.name, artist.genres, artist.popularity])
+        const currentFriendTopArtists = currentFriendTopArtistsData.items.map((artist) => [artist.name, artist.genres, artist.popularity])
+
+        const currentUserFollowedArtistsData = await followedArtists(currentUserSpotify)
+        const currentFriendFollowedArtistsData = await followedArtists(currentFriendSpotify)
+        const currentUserFollowedArtists = currentUserFollowedArtistsData.artists.items.map((artist) => [artist.name, artist.genres, artist.popularity])
+        const currentFriendFollowedArtists = currentFriendFollowedArtistsData.artists.items.map((artist) => [artist.name, artist.genres, artist.popularity])
+
+        const currentUserLikedSongsData = await savedTracks(currentUserSpotify)
+        const friendUserLikedSongsData = await savedTracks(currentFriendSpotify)
+        const currentUserLikedSongs = currentUserLikedSongsData.items.map((song) => [song.track.name, [song.track.artists.map((artist) => artist.name)], song.track.popularity])
+        const friendUserLikedSongs = friendUserLikedSongsData.items.map((song) => [song.track.name, [song.track.artists.map((artist) => artist.name)], song.track.popularity])
+
+        const currentUserTopAudioFeaturesData = await audioFeatures(currentUserSpotify, currentUserTopSongsIds)
+        const currentFriendTopAudioFeaturesData = await audioFeatures(currentFriendSpotify, currentFriendTopSongsIds)
+        let currentUserDanceability = 0, currentUserLoudness = 0, currentUserEnergy = 0, currentUserTempo = 0, currentUserValence = 0;
+        let currentFriendDanceability = 0, currentFriendLoudness = 0, currentFriendEnergy = 0, currentFriendTempo = 0, currentFriendValence = 0;
+        currentUserTopAudioFeaturesData.audio_features.forEach((song) => {
+            currentUserDanceability += song.danceability
+            currentUserLoudness += song.loudness
+            currentUserEnergy += song.energy
+            currentUserTempo += song.tempo
+            currentUserValence += song.valence
+        })
+        currentFriendTopAudioFeaturesData.audio_features.forEach((song) => {
+            currentFriendDanceability += song.danceability
+            currentFriendLoudness += song.loudness
+            currentFriendEnergy += song.energy
+            currentFriendTempo += song.tempo
+            currentFriendValence += song.valence
+        })
+        const currentUserTopAudioFeatures = {danceability: parseFloat(currentUserDanceability / 10).toFixed(3), loudness: parseFloat(currentUserLoudness / 10).toFixed(3), energy: parseFloat(currentUserEnergy / 10).toFixed(3), tempo: parseFloat(currentUserTempo / 10).toFixed(3), valence: parseFloat(currentUserValence / 10).toFixed(3)}
+        const currentFriendTopAudioFeatures = {danceability: parseFloat(currentFriendDanceability / 10).toFixed(3), loudness: parseFloat(currentFriendLoudness / 10).toFixed(3), energy: parseFloat(currentFriendEnergy / 10).toFixed(3), tempo: parseFloat(currentFriendTempo / 10).toFixed(3), valence: parseFloat(currentFriendValence / 10).toFixed(3)}
+        res.status(200).json({
+            currentUserTopSongs: currentUserTopSongs,
+            currentFriendTopSongs: currentFriendTopSongs,
+            currentUserTopArtists: currentUserTopArtists,
+            currentFriendTopArtists: currentFriendTopArtists,
+            currentUserFollowedArtists: currentUserFollowedArtists,
+            currentFriendFollowedArtists: currentFriendFollowedArtists,
+            currentUserLikedSongs: currentUserLikedSongs,
+            friendUserLikedSongs: friendUserLikedSongs,
+            currentUserTopAudioFeatures: currentUserTopAudioFeatures,
+            currentFriendTopAudioFeatures: currentFriendTopAudioFeatures
+        })
     }
 })
 

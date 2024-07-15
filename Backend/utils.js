@@ -145,6 +145,186 @@ async function refreshSpotifyToken(spotifyUser) {
     return newAccessToken
 }
 
+async function saveTopSongs(username, songInfo){
+    const user = await findUser(username)
+    const latestTopSongs = await prisma.topSongs.findFirst({
+        where: {
+            userId: user.id
+        },
+        orderBy: {
+            createdAt: 'desc'
+        }
+    });
+
+    if (latestTopSongs && latestTopSongs.createdAt > Date.now() - 4 * 7 * 24 * 60 * 60 * 1000) { return latestTopSongs }
+    const topSongsData = songInfo.map((song) => ({
+        track: song.songName,
+        artist: song.artistNames
+    }))
+    const topSongs = await prisma.topSongs.create({
+        data: {
+            tracks: {
+                create: topSongsData
+            },
+            user:{
+                connect: user
+            }
+        }
+    })
+    return topSongs;
+}
+
+async function topSongs (spotifyUser) {
+    try {
+        const response = await fetch('https://api.spotify.com/v1/me/top/tracks?time_range=short_term&limit=10&offset=0', {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${spotifyUser.accessToken}`
+            }
+        });
+        if (response.ok) {
+            const data = await response.json()
+            return data
+        } else if (response.status === 401) {
+            const newAccessToken = await refreshSpotifyToken(spotifyUser);
+            const response = await fetch('https://api.spotify.com/v1/me/top/tracks?time_range=short_term&limit=10&offset=0', {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${newAccessToken}`
+                }
+            });
+            if (response.ok) {
+                const data = await response.json()
+                return data
+            }
+        }
+    } catch (error) {
+        throw error
+    }
+}
+
+async function topArtists(spotifyUser) {
+    try {
+        const response = await fetch('https://api.spotify.com/v1/me/top/artists?time_range=short_term&limit=10&offset=0', {
+            method: "GET",
+            headers: {
+                "Content-Type": "appplication/json",
+                "Authorization": `Bearer ${spotifyUser.accessToken}`
+            }
+        });
+        if (response.ok) {
+            const data = await response.json()
+            return data
+        } else if (response.status === 401) {
+            const newAccessToken = await refreshSpotifyToken(spotifyUser);
+            const response = await fetch('https://api.spotify.com/v1/me/top/artists?time_range=short_term&limit=10&offset=0', {
+                method: "GET",
+                headers: {
+                    "Content-Type": "appplication/json",
+                    "Authorization": `Bearer ${newAccessToken}`
+                }
+            });
+            if (response.ok) {
+                const data = await response.json()
+                return data
+            }
+        }
+    } catch (error) {
+        throw error
+    }
+}
+
+async function followedArtists(spotifyUser) {
+    try {
+        const response = await fetch('https://api.spotify.com/v1/me/following?type=artist&limit=10', {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${spotifyUser.accessToken}`
+            }
+        });
+        if (response.ok){
+            const data = await response.json()
+            return data
+        }else if (response.status === 401 || response.status === 403) {
+            const newAccessToken = await refreshSpotifyToken(spotifyUser);
+            const response = await fetch('https://api.spotify.com/v1/me/following?type=artist&limit=10', {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${newAccessToken}`
+                }
+            });
+            if (response.ok){
+                const data = await response.json()
+                return data
+            }
+        }
+    } catch (error) {
+        throw error
+    }
+}
+
+async function savedTracks(spotifyUser) {
+    try {
+        const response = await fetch('https://api.spotify.com/v1/me/tracks?limit=50&offset=0', {
+            method: "GET",
+            headers: {
+                "Content-Type": "aplication/json",
+                "Authorization": `Bearer ${spotifyUser.accessToken}`
+            }
+        });
+        if (response.ok){
+            const data = await response.json()
+            return data
+        } else if (response.status === 401) {
+            const newAccessToken = refreshSpotifyToken(spotifyUser);
+            const response = await fetch('https://api.spotify.com/v1/me/tracks?limit=10&offset=0', {
+                method: "GET",
+                headers: {
+                    "Content-Type": "aplication/json",
+                    "Authorization": `Bearer ${newAccessToken}`
+                }
+            });
+        }
+    } catch (error) {
+        throw error
+    }
+}
+
+async function audioFeatures(spotifyUser, songIds) {
+    try {
+        const response = await fetch(`https://api.spotify.com/v1/audio-features?ids=${songIds}`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${spotifyUser.accessToken}`
+            }
+        });
+        if (response.ok) {
+            const data = await response.json()
+            return data
+        } else if (response.status === 401) {
+            const newAccessToken = await refreshSpotifyToken(spotifyUser)
+            const response = await fetch(`https://api.spotify.com/v1/audio-features?ids=${songIds}`, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${newAccessToken}`
+                }
+            });
+            if (response.ok) {
+                const data = await response.json()
+                return data
+            }
+        }
+    } catch (error) {
+        throw error
+    }
+}
+
 
 module.exports = {
     hashPassword,
@@ -159,5 +339,11 @@ module.exports = {
     generateRandomString,
     getUsersTopSongs,
     getTopSongs,
-    refreshSpotifyToken
+    refreshSpotifyToken,
+    saveTopSongs,
+    topSongs,
+    topArtists,
+    followedArtists,
+    savedTracks,
+    audioFeatures
 };

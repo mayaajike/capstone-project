@@ -53,6 +53,8 @@ export default function NavBar({ handleSearch, searchResults, setSearchResults, 
                     }
                 })
                 setFriendRequests(received)
+            } else {
+                return;
             }
         } catch (error) {
             throw error
