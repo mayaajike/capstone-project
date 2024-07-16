@@ -14,20 +14,20 @@ datasource db {
 }
 
 model User {
-  id                    String          @id @default(uuid())
-  firstName             String
-  lastName              String
-  username              String          @unique
-  password              String
-  email                 String          @unique
-  spotifyAccount        SpotifyAccount?
-  initiatedFriendships  Friendship[]             @relation("FriendshipInitiator")
-  receivedFriendships   Friendship[]             @relation("FriendshipReceiver")
-  confirmedFriendships1 ConfirmedFriendship[]    @relation("ConfirmedFriendshipUser1")
-  confirmedFriendships2 ConfirmedFriendship[]    @relation("ConfirmedFriendshipUser2")
-  topSongs              TopSongs[]
-  accessToken           String?
-  refreshToken          String?
+  id                              String                   @id @default(uuid())
+  firstName                       String
+  lastName                        String
+  username                        String                   @unique
+  password                        String
+  email                           String                   @unique
+  spotifyAccount                  SpotifyAccount?
+  initiatedFriendships            Friendship[]             @relation("FriendshipInitiator")
+  receivedFriendships             Friendship[]             @relation("FriendshipReceiver")
+  confirmedFriendshipsInitiated   ConfirmedFriendship[]    @relation("ConfirmedFriendshipUser1")
+  confirmedFriendshipsReceived    ConfirmedFriendship[]    @relation("ConfirmedFriendshipUser2")
+  topSongs                        TopSongs[]
+  accessToken                     String?
+  refreshToken                    String?
 }
 
 model SpotifyAccount {
