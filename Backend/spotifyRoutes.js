@@ -8,7 +8,6 @@ const {
   findSpotifyUser,
   updateSpotifyUser,
   generateRandomString,
-  getUsersTopSongs,
   getTopSongs,
   refreshSpotifyToken,
   topSongs,
@@ -17,6 +16,15 @@ const {
   savedTracks,
   audioFeatures,
   calculateAudioFeatures,
+  getTopGenres,
+  getCompatibilityScore,
+  usersTopSongs,
+  topSongIds,
+  usersTopArtists,
+  usersFollowedArtists,
+  usersLikedSongs,
+  usersAudioFeatures
+
 } = require("./utils");
 
 const clientId = process.env.SPOTIFY_CLIENT_ID;
@@ -271,163 +279,44 @@ router.get("/compatibility", async (req, res) => {
     currentUserSpotify &&
     currentFriendSpotify
   ) {
-    const currentUserTopSongsData = await topSongs(currentUserSpotify);
-    const currentFriendTopSongsData = await topSongs(currentFriendSpotify);
-    const currentUserTopSongs = currentUserTopSongsData.items.map(
-        (song) => ({ title: song.name, popularity: song.popularity,})
-      );
-    const currentFriendTopSongs = currentFriendTopSongsData.items.map(
-      (song) => ({ title: song.name, popularity: song.popularity}),
-    );
-    const currentUserTopSongsIds = currentUserTopSongsData.items
-      .map((song) => song.id)
-      .join(",");
-    const currentFriendTopSongsIds = currentFriendTopSongsData.items
-      .map((song) => song.id)
-      .join(",");
-    const topSongsJaccard = await calcTopSongsJaccard(currentUserTopSongs, currentFriendTopSongs)
+    const currentUserTopSongs = await usersTopSongs(currentUserSpotify)
+    const currentFriendTopSongs = await usersTopSongs(currentFriendSpotify)
 
-    const currentUserTopArtistsData = await topArtists(currentUserSpotify);
-    const currentFriendTopArtistsData = await topArtists(currentFriendSpotify);
-    const currentUserTopArtists = currentUserTopArtistsData.items.map(
-      (artist) => ({ name: artist.name, genres: artist.genres, popularity: artist.popularity }),
-    );
-    const currentFriendTopArtists = currentFriendTopArtistsData.items.map(
-      (artist) => ({ name: artist.name, genres: artist.genres, popularity: artist.popularity }),
-    );
-    const topArtistJaccard = await calcTopArtistsJaccard(currentUserTopArtists, currentFriendTopArtists)
+    const currentUserTopSongsIds = await topSongIds(currentUserSpotify)
+    const currentFriendTopSongsIds = await topSongIds(currentFriendSpotify)
 
-    const currentUserFollowedArtistsData =
-      await followedArtists(currentUserSpotify);
-    const currentFriendFollowedArtistsData =
-      await followedArtists(currentFriendSpotify);
-    const currentUserFollowedArtists =
-      currentUserFollowedArtistsData.artists.items.map(
-        (artist) => ({ name: artist.name, genres: artist.genres, popularity: artist.popularity}),
-      );
-    const currentFriendFollowedArtists =
-      currentFriendFollowedArtistsData.artists.items.map(
-        (artist) => ({ name: artist.name, genres: artist.genres, popularity: artist.popularity}),
-      );
-    const followedArtistJaccard = await calcTopArtistsJaccard(currentUserFollowedArtists, currentFriendFollowedArtists)
+    const currentUserTopArtists = await usersTopArtists(currentUserSpotify);
+    const currentFriendTopArtists = await usersTopArtists(currentFriendSpotify);
 
-    const currentUserLikedSongsData = await savedTracks(currentUserSpotify);
-    const friendUserLikedSongsData = await savedTracks(currentFriendSpotify);
-    const currentUserLikedSongs = currentUserLikedSongsData.items.map(
-      (song) => ({ name: song.track.name,
-        artists: [song.track.artists.map((artist) => artist.name)],
-        popularity: song.track.popularity,}),
-    );
-    const friendUserLikedSongs = friendUserLikedSongsData.items.map(
-        (song) => ({ name: song.track.name,
-            artists: [song.track.artists.map((artist) => artist.name)],
-            popularity: song.track.popularity,}),
+    const currentUserFollowedArtists = await usersFollowedArtists(currentUserSpotify);
+    const currentFriendFollowedArtists = await usersFollowedArtists(currentFriendSpotify);
 
-    );
-    const likedSongsJaccard = await calcTopArtistsJaccard(currentUserLikedSongs, friendUserLikedSongs)
+    const currentUserLikedSongs = await usersLikedSongs(currentUserSpotify);
+    const friendUserLikedSongs = await usersLikedSongs(currentFriendSpotify);
 
     const currentUserTopGenres = getTopGenres(currentUserTopArtists, currentUserFollowedArtists)
     const currentFriendTopGenres = getTopGenres(currentFriendTopArtists, currentFriendFollowedArtists)
-    const topGenresJaccard = await calcTopGenresJaccard(currentUserTopGenres, currentFriendTopGenres)
 
-    const currentUserTopAudioFeaturesData = await audioFeatures(
-      currentUserSpotify,
-      currentUserTopSongsIds,
-    );
-    const currentFriendTopAudioFeaturesData = await audioFeatures(
-      currentFriendSpotify,
-      currentFriendTopSongsIds,
-    );
-    const currentUserTopAudioFeatures = await calculateAudioFeatures(
-      currentUserTopAudioFeaturesData,
-    );
-    const currentFriendTopAudioFeatures = await calculateAudioFeatures(
-      currentFriendTopAudioFeaturesData,
-    );
+    const currentUserTopAudioFeatures = await usersAudioFeatures(currentUserSpotify, currentUserTopSongsIds);
+    const currentFriendTopAudioFeatures = await usersAudioFeatures(currentFriendSpotify, currentFriendTopSongsIds);
 
-    res.status(200).json({
-      currentUserTopSongs: currentUserTopSongs,
-      currentFriendTopSongs: currentFriendTopSongs,
-      currentUserTopArtists: currentUserTopArtists,
-      currentFriendTopArtists: currentFriendTopArtists,
-      currentUserFollowedArtists: currentUserFollowedArtists,
-      currentFriendFollowedArtists: currentFriendFollowedArtists,
-      currentUserLikedSongs: currentUserLikedSongs,
-      friendUserLikedSongs: friendUserLikedSongs,
-      currentUserTopAudioFeatures: currentUserTopAudioFeatures,
-      currentFriendTopAudioFeatures: currentFriendTopAudioFeatures,
-    });
+    const compatibilityScore = getCompatibilityScore(
+        currentUserTopSongs,
+        currentFriendTopSongs,
+        currentUserTopArtists,
+        currentFriendTopArtists,
+        currentUserFollowedArtists,
+        currentFriendFollowedArtists,
+        currentUserLikedSongs,
+        friendUserLikedSongs,
+        currentUserTopGenres,
+        currentFriendTopGenres,
+        currentUserTopAudioFeatures,
+        currentFriendTopAudioFeatures
+    )
+
+    res.status(200).json({ compatibility: compatibilityScore });
   }
 });
-
-function calcJaccard(intersection, union) {
-    if (intersection.size === 0) {
-        return 0;
-    } else {
-        let intersectionNum = 0, unionNum = 0;
-        for (const song of intersection) {
-            const [title, popularity] = song.split(":");
-            if (0 <= popularity && popularity <= 34 ) {
-                intersectionNum += 3
-            }else if (35 <= popularity && popularity <= 68) {
-                intersectionNum += 2
-            }else if (69 <= popularity && popularity <= 100) {
-                intersectionNum += 1
-            }
-        }
-
-        for (const song of union) {
-            const [title, popularity] = song.split(":");
-            if (0 <= popularity && popularity <= 34 ) {
-                unionNum += 3
-            }else if (35 <= popularity && popularity <= 68) {
-                unionNum += 2
-            }else if (69 <= popularity && popularity <= 100) {
-                unionNum += 1
-            }
-        }
-        const index = (intersectionNum / unionNum).toFixed(3)
-        return parseInt(index)
-    }
-}
-
-async function calcTopSongsJaccard(currentUserData, currentFriendData) {
-    const userSet = new Set(currentUserData.map((song) => `${song.title}:${song.popularity}`))
-    const friendSet = new Set(currentFriendData.map((song) => `${song.title}:${song.popularity}`))
-    const intersection = new Set([...userSet].filter(x => friendSet.has(x)))
-    const union = new Set([...userSet, ...friendSet])
-    const index = calcJaccard(intersection, union)
-    return index
-
-}
-
-async function calcTopArtistsJaccard(userData, friendData) {
-    const userSet = new Set(userData.map((artist) => `${artist.name}:${artist.popularity}`))
-    const friendSet = new Set(friendData.map((artist) => `${artist.name}:${artist.popularity}`))
-    const intersection = new Set([...userSet].filter(x => friendSet.has(x)))
-    const union = new Set([...userSet, ...friendSet])
-    const index = calcJaccard(intersection, union)
-    return index
-}
-function getTopGenres(topArtists, followedArtists) {
-    let genres = [];
-    topArtists.forEach((artist) => {
-        genres = [...genres, ...artist.genres];
-    });
-    followedArtists.forEach((artist) => {
-        genres = [...genres, ...artist.genres]
-    });
-    const genresSet = new Set(genres)
-    return genresSet
-}
-
-async function calcTopGenresJaccard(userSet, friendSet){
-    const intersection = new Set([...userSet].filter(x => friendSet.has(x)))
-    const union = new Set([...userSet, ...friendSet])
-    const index = (intersection.size / union.size).toFixed(3)
-    return index
-}
-
-
 
 module.exports = router;
