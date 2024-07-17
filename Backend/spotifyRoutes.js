@@ -23,8 +23,7 @@ const {
   usersTopArtists,
   usersFollowedArtists,
   usersLikedSongs,
-  usersAudioFeatures
-
+  usersAudioFeatures,
 } = require("./utils");
 
 const clientId = process.env.SPOTIFY_CLIENT_ID;
@@ -279,41 +278,55 @@ router.get("/compatibility", async (req, res) => {
     currentUserSpotify &&
     currentFriendSpotify
   ) {
-    const currentUserTopSongs = await usersTopSongs(currentUserSpotify)
-    const currentFriendTopSongs = await usersTopSongs(currentFriendSpotify)
+    const currentUserTopSongs = await usersTopSongs(currentUserSpotify);
+    const currentFriendTopSongs = await usersTopSongs(currentFriendSpotify);
 
-    const currentUserTopSongsIds = await topSongIds(currentUserSpotify)
-    const currentFriendTopSongsIds = await topSongIds(currentFriendSpotify)
+    const currentUserTopSongsIds = await topSongIds(currentUserSpotify);
+    const currentFriendTopSongsIds = await topSongIds(currentFriendSpotify);
 
     const currentUserTopArtists = await usersTopArtists(currentUserSpotify);
     const currentFriendTopArtists = await usersTopArtists(currentFriendSpotify);
 
-    const currentUserFollowedArtists = await usersFollowedArtists(currentUserSpotify);
-    const currentFriendFollowedArtists = await usersFollowedArtists(currentFriendSpotify);
+    const currentUserFollowedArtists =
+      await usersFollowedArtists(currentUserSpotify);
+    const currentFriendFollowedArtists =
+      await usersFollowedArtists(currentFriendSpotify);
 
     const currentUserLikedSongs = await usersLikedSongs(currentUserSpotify);
     const friendUserLikedSongs = await usersLikedSongs(currentFriendSpotify);
 
-    const currentUserTopGenres = getTopGenres(currentUserTopArtists, currentUserFollowedArtists)
-    const currentFriendTopGenres = getTopGenres(currentFriendTopArtists, currentFriendFollowedArtists)
+    const currentUserTopGenres = getTopGenres(
+      currentUserTopArtists,
+      currentUserFollowedArtists,
+    );
+    const currentFriendTopGenres = getTopGenres(
+      currentFriendTopArtists,
+      currentFriendFollowedArtists,
+    );
 
-    const currentUserTopAudioFeatures = await usersAudioFeatures(currentUserSpotify, currentUserTopSongsIds);
-    const currentFriendTopAudioFeatures = await usersAudioFeatures(currentFriendSpotify, currentFriendTopSongsIds);
+    const currentUserTopAudioFeatures = await usersAudioFeatures(
+      currentUserSpotify,
+      currentUserTopSongsIds,
+    );
+    const currentFriendTopAudioFeatures = await usersAudioFeatures(
+      currentFriendSpotify,
+      currentFriendTopSongsIds,
+    );
 
     const compatibilityScore = getCompatibilityScore(
-        currentUserTopSongs,
-        currentFriendTopSongs,
-        currentUserTopArtists,
-        currentFriendTopArtists,
-        currentUserFollowedArtists,
-        currentFriendFollowedArtists,
-        currentUserLikedSongs,
-        friendUserLikedSongs,
-        currentUserTopGenres,
-        currentFriendTopGenres,
-        currentUserTopAudioFeatures,
-        currentFriendTopAudioFeatures
-    )
+      currentUserTopSongs,
+      currentFriendTopSongs,
+      currentUserTopArtists,
+      currentFriendTopArtists,
+      currentUserFollowedArtists,
+      currentFriendFollowedArtists,
+      currentUserLikedSongs,
+      friendUserLikedSongs,
+      currentUserTopGenres,
+      currentFriendTopGenres,
+      currentUserTopAudioFeatures,
+      currentFriendTopAudioFeatures,
+    );
 
     res.status(200).json({ compatibility: compatibilityScore });
   }

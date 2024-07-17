@@ -405,64 +405,69 @@ async function calculateAudioFeatures(audioFeatures) {
 
 function calcJaccard(intersection, union) {
   if (intersection.size === 0) {
-      return 0;
+    return 0;
   } else {
-      let intersectionNum = 0, unionNum = 0;
-      for (const song of intersection) {
-          const [title, popularity] = song.split(":");
-          if (0 <= popularity && popularity <= 34 ) {
-              intersectionNum += 3
-          }else if (35 <= popularity && popularity <= 68) {
-              intersectionNum += 2
-          }else if (69 <= popularity && popularity <= 100) {
-              intersectionNum += 1
-          }
+    let intersectionNum = 0,
+      unionNum = 0;
+    for (const song of intersection) {
+      const [title, popularity] = song.split(":");
+      if (0 <= popularity && popularity <= 34) {
+        intersectionNum += 3;
+      } else if (35 <= popularity && popularity <= 68) {
+        intersectionNum += 2;
+      } else if (69 <= popularity && popularity <= 100) {
+        intersectionNum += 1;
       }
+    }
 
-      for (const song of union) {
-          const [title, popularity] = song.split(":");
-          if (0 <= popularity && popularity <= 34 ) {
-              unionNum += 3
-          }else if (35 <= popularity && popularity <= 68) {
-              unionNum += 2
-          }else if (69 <= popularity && popularity <= 100) {
-              unionNum += 1
-          }
+    for (const song of union) {
+      const [title, popularity] = song.split(":");
+      if (0 <= popularity && popularity <= 34) {
+        unionNum += 3;
+      } else if (35 <= popularity && popularity <= 68) {
+        unionNum += 2;
+      } else if (69 <= popularity && popularity <= 100) {
+        unionNum += 1;
       }
-      const index = (intersectionNum / unionNum).toFixed(3)
-      return parseFloat(index)
+    }
+    const index = (intersectionNum / unionNum).toFixed(3);
+    return parseFloat(index);
   }
 }
 
 function calcJaccardIndex(userData, friendData) {
-  const userSet = new Set(userData.map((record) => `${record.name}:${record.popularity}`))
-  const friendSet = new Set(friendData.map((record) => `${record.name}:${record.popularity}`))
-  const intersection = new Set([...userSet].filter(x => friendSet.has(x)))
-  const union = new Set([...userSet, ...friendSet])
-  const index = calcJaccard(intersection, union)
-  return index
+  const userSet = new Set(
+    userData.map((record) => `${record.name}:${record.popularity}`),
+  );
+  const friendSet = new Set(
+    friendData.map((record) => `${record.name}:${record.popularity}`),
+  );
+  const intersection = new Set([...userSet].filter((x) => friendSet.has(x)));
+  const union = new Set([...userSet, ...friendSet]);
+  const index = calcJaccard(intersection, union);
+  return index;
 }
 
 function getTopGenres(topArtists, followedArtists) {
   let genres = [];
   topArtists.forEach((artist) => {
-      genres = [...genres, ...artist.genres];
+    genres = [...genres, ...artist.genres];
   });
   followedArtists.forEach((artist) => {
-      genres = [...genres, ...artist.genres]
+    genres = [...genres, ...artist.genres];
   });
-  const genresSet = new Set(genres)
-  return genresSet
+  const genresSet = new Set(genres);
+  return genresSet;
 }
 
-function calcTopGenresJaccard(userSet, friendSet){
-  const intersection = new Set([...userSet].filter(x => friendSet.has(x)))
-  const union = new Set([...userSet, ...friendSet])
-  if (intersection.size === 0){
-      return 0
+function calcTopGenresJaccard(userSet, friendSet) {
+  const intersection = new Set([...userSet].filter((x) => friendSet.has(x)));
+  const union = new Set([...userSet, ...friendSet]);
+  if (intersection.size === 0) {
+    return 0;
   }
-  const index = (intersection.size / union.size).toFixed(3)
-  return parseFloat(index)
+  const index = (intersection.size / union.size).toFixed(3);
+  return parseFloat(index);
 }
 
 function dotProduct(vectorA, vectorB) {
@@ -474,24 +479,26 @@ function magnitude(vector) {
 }
 
 function calcCosineSimilarity(userAudioFeatures, friendAudioFeatures) {
-  currentUserVector = Object.values(userAudioFeatures)
-  currentFriendVector = Object.values(friendAudioFeatures)
-  const dotProductRes = dotProduct(currentUserVector, currentFriendVector)
-  const userMagnitude = magnitude(currentUserVector)
-  const friendMagnitude = magnitude(currentFriendVector)
-  const similarity = dotProductRes / (userMagnitude * friendMagnitude)
-  return similarity
-
+  currentUserVector = Object.values(userAudioFeatures);
+  currentFriendVector = Object.values(friendAudioFeatures);
+  const dotProductRes = dotProduct(currentUserVector, currentFriendVector);
+  const userMagnitude = magnitude(currentUserVector);
+  const friendMagnitude = magnitude(currentFriendVector);
+  const similarity = dotProductRes / (userMagnitude * friendMagnitude);
+  return similarity;
 }
 
 function calcCompatibility(jaccardScores, cosineSimilarity) {
   let jaccardSum = 0;
   jaccardScores.forEach((score) => {
-      jaccardSum += score
-  })
-  let jaccardAvg = jaccardSum / jaccardScores.length
-  const compatibility = (((0.4 * jaccardAvg) + (0.6 * cosineSimilarity)) * 100).toFixed(1)
-  return parseFloat(compatibility)
+    jaccardSum += score;
+  });
+  let jaccardAvg = jaccardSum / jaccardScores.length;
+  const compatibility = (
+    (0.4 * jaccardAvg + 0.6 * cosineSimilarity) *
+    100
+  ).toFixed(1);
+  return parseFloat(compatibility);
 }
 
 function getCompatibilityScore(
@@ -506,65 +513,98 @@ function getCompatibilityScore(
   currentUserTopGenres,
   currentFriendTopGenres,
   currentUserTopAudioFeatures,
-  currentFriendTopAudioFeatures
+  currentFriendTopAudioFeatures,
 ) {
-  const topSongsJaccard = calcJaccardIndex(currentUserTopSongs, currentFriendTopSongs)
-  const topArtistJaccard = calcJaccardIndex(currentUserTopArtists, currentFriendTopArtists)
-  const followedArtistJaccard = calcJaccardIndex(currentUserFollowedArtists, currentFriendFollowedArtists)
-  const likedSongsJaccard = calcJaccardIndex(currentUserLikedSongs, friendUserLikedSongs)
-  const topGenresJaccard = calcTopGenresJaccard(currentUserTopGenres, currentFriendTopGenres)
-  const jaccardScores = [topSongsJaccard, topArtistJaccard, followedArtistJaccard, likedSongsJaccard, topGenresJaccard]
-  const audioFeaturesCosineSimilarity = calcCosineSimilarity(currentUserTopAudioFeatures, currentFriendTopAudioFeatures)
-  const compatibility = calcCompatibility(jaccardScores, audioFeaturesCosineSimilarity)
-  return compatibility
+  const topSongsJaccard = calcJaccardIndex(
+    currentUserTopSongs,
+    currentFriendTopSongs,
+  );
+  const topArtistJaccard = calcJaccardIndex(
+    currentUserTopArtists,
+    currentFriendTopArtists,
+  );
+  const followedArtistJaccard = calcJaccardIndex(
+    currentUserFollowedArtists,
+    currentFriendFollowedArtists,
+  );
+  const likedSongsJaccard = calcJaccardIndex(
+    currentUserLikedSongs,
+    friendUserLikedSongs,
+  );
+  const topGenresJaccard = calcTopGenresJaccard(
+    currentUserTopGenres,
+    currentFriendTopGenres,
+  );
+  const jaccardScores = [
+    topSongsJaccard,
+    topArtistJaccard,
+    followedArtistJaccard,
+    likedSongsJaccard,
+    topGenresJaccard,
+  ];
+  const audioFeaturesCosineSimilarity = calcCosineSimilarity(
+    currentUserTopAudioFeatures,
+    currentFriendTopAudioFeatures,
+  );
+  const compatibility = calcCompatibility(
+    jaccardScores,
+    audioFeaturesCosineSimilarity,
+  );
+  return compatibility;
 }
 
 async function usersTopSongs(spotifyUser) {
-  const topSongsData = await topSongs(spotifyUser)
-  const topSongsRes = topSongsData.items.map(
-    (song) => ({ name: song.name, popularity: song.popularity})
-  )
-  return topSongsRes
+  const topSongsData = await topSongs(spotifyUser);
+  const topSongsRes = topSongsData.items.map((song) => ({
+    name: song.name,
+    popularity: song.popularity,
+  }));
+  return topSongsRes;
 }
 
 async function topSongIds(spotifyUser) {
-  const topSongsData = await topSongs(spotifyUser)
+  const topSongsData = await topSongs(spotifyUser);
   const songIds = topSongsData.items.map((song) => song.id).join(",");
-  return songIds
+  return songIds;
 }
 
 async function usersTopArtists(spotifyUser) {
-  const topArtistsData = await topArtists(spotifyUser)
-  const topArtistsRes = topArtistsData.items.map(
-    (artist) => ({ name: artist.name, genres: artist.genres, popularity: artist.popularity }),
-  );
-  return topArtistsRes
+  const topArtistsData = await topArtists(spotifyUser);
+  const topArtistsRes = topArtistsData.items.map((artist) => ({
+    name: artist.name,
+    genres: artist.genres,
+    popularity: artist.popularity,
+  }));
+  return topArtistsRes;
 }
 
 async function usersFollowedArtists(spotifyUser) {
-  const followedArtistsData = await followedArtists(spotifyUser)
+  const followedArtistsData = await followedArtists(spotifyUser);
   const followedArtistsRes = followedArtistsData.artists.items.map(
-    (artist) => ({ name: artist.name, genres: artist.genres, popularity: artist.popularity}),
+    (artist) => ({
+      name: artist.name,
+      genres: artist.genres,
+      popularity: artist.popularity,
+    }),
   );
-  return followedArtistsRes
+  return followedArtistsRes;
 }
 
 async function usersLikedSongs(spotifyUser) {
-  const likedSongsData = await savedTracks(spotifyUser)
-  const likedSongs = likedSongsData.items.map(
-    (song) => ({ name: song.track.name,
-      artists: [song.track.artists.map((artist) => artist.name)],
-      popularity: song.track.popularity,}),
-  );
-  return likedSongs
+  const likedSongsData = await savedTracks(spotifyUser);
+  const likedSongs = likedSongsData.items.map((song) => ({
+    name: song.track.name,
+    artists: [song.track.artists.map((artist) => artist.name)],
+    popularity: song.track.popularity,
+  }));
+  return likedSongs;
 }
 
 async function usersAudioFeatures(spotifyUser, songIds) {
-  const audioFeaturesData = await audioFeatures(spotifyUser, songIds)
-  const audioFeaturesRes = await calculateAudioFeatures(audioFeaturesData)
-  return audioFeaturesRes
+  const audioFeaturesData = await audioFeatures(spotifyUser, songIds);
+  const audioFeaturesRes = await calculateAudioFeatures(audioFeaturesData);
+  return audioFeaturesRes;
 }
-
 
 module.exports = {
   hashPassword,
@@ -600,5 +640,5 @@ module.exports = {
   usersTopArtists,
   usersFollowedArtists,
   usersLikedSongs,
-  usersAudioFeatures
+  usersAudioFeatures,
 };
