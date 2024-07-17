@@ -128,8 +128,8 @@ export default function Profile({
       if (response.ok) {
         const data = await response.json();
         setConfirmedFriends([
-          ...data.confirmedFriendships1,
-          ...data.confirmedFriendships2,
+          ...data.confirmedFriendshipsInitiated,
+          ...data.confirmedFriendshipsReceived,
         ]);
         setInitiatedFriends(data.initiatedFriendships);
         setReceivedFriends(data.receivedFriendships);
