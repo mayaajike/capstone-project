@@ -4,6 +4,7 @@ import { useLocation } from "react-router-dom";
 import NavBar from "./NavBar";
 import { RefreshTokenContext } from "../Context/RefreshTokenContext";
 import { LogoutContext } from "../Context/LogoutContext";
+import { CircularProgress } from "@mui/material";
 
 export default function SearchProfile() {
   const [topSongs, setTopSongs] = useState([]);
@@ -17,19 +18,23 @@ export default function SearchProfile() {
   const currentUser = JSON.parse(localStorage.getItem("user"));
   const currentUsername = currentUser.username;
   const [spotifyUser, setSpotifyUser] = useState([]);
-  const [friend, setFriend] = useState(false);
   const [friendshipConfirmed, setFriendshipConfirmed] = useState(false);
   const [friendshipInitiated, setFriendshipInitiated] = useState(false);
   const [friendshipReceived, setFriendshipReceived] = useState(false);
   const [confirmedFriends, setConfirmedFriends] = useState([]);
   const [initiatedFriends, setInitiatedFriends] = useState([]);
   const [receivedFriends, setReceivedFriends] = useState([]);
+  const [friends, setFriends] = useState(0)
+  const [compatibility, setCompatibility] = useState(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     getTopSongs();
     getRecentlyPlayed();
+    getCompatibility();
     getSpotify();
     getFriends();
+    getFriendsCount();
   }, []);
 
   useEffect(() => {
@@ -130,8 +135,8 @@ export default function SearchProfile() {
       if (response.ok) {
         const data = await response.json();
         setConfirmedFriends([
-          ...data.confirmedFriendships1,
-          ...data.confirmedFriendships2,
+          ...data.confirmedFriendshipsInitiated,
+          ...data.confirmedFriendshipsReceived,
         ]);
         setInitiatedFriends(data.initiatedFriendships);
         setReceivedFriends(data.receivedFriendships);
@@ -140,6 +145,25 @@ export default function SearchProfile() {
       throw error;
     }
   };
+
+  const getFriendsCount = async () => {
+    try {
+      const response = await fetch(`http://localhost:4700/friends?username=${username}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${accessToken}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json()
+        const confirmedFriends = [...data.confirmedFriendshipsInitiated, ...data.confirmedFriendshipsReceived]
+        setFriends(confirmedFriends.length)
+      }
+    } catch (error) {
+      throw error
+    }
+  }
 
   const checkFriendship = async () => {
     let friendshipFound = null;
@@ -192,7 +216,6 @@ export default function SearchProfile() {
       });
       if (response.ok) {
         const data = await response.json();
-        console.log(data);
         setFriendshipInitiated(true);
         await getFriends();
       } else if (response.status === 409) {
@@ -202,6 +225,26 @@ export default function SearchProfile() {
       throw error;
     }
   };
+
+  const getCompatibility = async () => {
+    try {
+      const response = await fetch(`http://localhost:4700/spotify/compatibility?username=${currentUsername}&friend=${username}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${accessToken}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setCompatibility(data.compatibility);
+        setLoading(false);
+      }
+    } catch (error) {
+      throw error
+    }
+
+  }
   return (
     <div className="profile-page">
       <NavBar />
@@ -211,38 +254,31 @@ export default function SearchProfile() {
           <h3 className="username">@{username}</h3>
           <h4 className="follower-count">
             {" "}
-            {confirmedFriends.length}{" "}
-            {confirmedFriends.length <= 1 ? "friend" : "friends"}
+            {friends}{" "}
+            {friends == 1 ? "friend" : "friends"}
           </h4>
           {spotifyUser &&
             spotifyUser.spotify &&
             spotifyUser.spotify.spotifyUrl && (
-              <a
-                className="spotify-url"
-                href={spotifyUser.spotify.spotifyUrl}
-                target="_blank"
-                style={{ color: "green" }}
-              >
+              <a className="spotify-url" href={spotifyUser.spotify.spotifyUrl} target="_blank" style={{ color: "green" }}>
                 Spotify Profile
               </a>
             )}
           <a
             className="follow-button"
-            onClick={
-              friendshipConfirmed || friendshipReceived || friendshipInitiated
-                ? null
-                : addFriend
-            }
-            style={{ color: "white" }}
-          >
-            {friendshipConfirmed
-              ? "Friend"
-              : friendshipInitiated
-                ? "Added"
-                : friendshipReceived
-                  ? "Accept"
-                  : "Follow +"}
+            onClick={ friendshipConfirmed || friendshipReceived || friendshipInitiated ? null : addFriend }
+            style={{ color: "white" }}>
+            {friendshipConfirmed ? "Friend" : friendshipInitiated ? "Added" : friendshipReceived ? "Accept" : "Follow +"}
           </a>
+          <p className="compatibility-score" style={{ color: compatibility >= 70 ? "green" : compatibility >= 50 ? "orange" : "yellow" }}>
+          {loading ? (
+              <CircularProgress color="secondary" />
+            ) : (
+              <>
+                {compatibility}%
+              </>
+            )}
+          </p>
         </div>
 
         <div className="recently-played">
@@ -277,8 +313,8 @@ export default function SearchProfile() {
           {topSongs && topSongs.topSongs ? (
             topSongs.topSongs.map((song, index) => (
               <div key={index}>
-                <h2 className="song-title">{song.track}</h2>
-                <p className="artist-name">{song.artist.join(", ")}</p>
+                <h2 className="song-title">{song.songName}</h2>
+                <p className="artist-name">{song.artistNames.join(", ")}</p>
               </div>
             ))
           ) : (

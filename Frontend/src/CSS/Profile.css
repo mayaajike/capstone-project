@@ -150,3 +150,11 @@
     font-weight: bold;
     font-size: 17px;
 }
+
+.compatibility-score {
+    z-index: 3;
+    left: 900px;
+    top: 30px;
+    position: relative;
+    font-size: 30px;
+}
