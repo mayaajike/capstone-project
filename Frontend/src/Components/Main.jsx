@@ -126,7 +126,7 @@ export default function Main({
         } else {
           alert("Failed to fetch tokens ", response.statusText);
         }
-        navigate("/");
+        navigate("/profile");
       } catch (error) {
         alert("Failed to fetch tokens ", error);
       }
@@ -186,6 +186,8 @@ export default function Main({
       alert("Unable to save tokens ", error);
     }
   };
+
+
 
   return (
     <>

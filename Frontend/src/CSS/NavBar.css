@@ -5,9 +5,30 @@
     left: 0;
     width: 100%;
     z-index: 1000;
-    padding: 10px 0;
+    padding: 15px 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: background-color 0.3s;
+}
+
+.tabs {
+    display: flex;
     flex-direction: row;
     justify-content: center;
+    align-items: center;
+    margin: 0 15px;
+    color: #333;
+    text-decoration: none;
+    font-weight: 500;
+    padding: 2px 6px;
+    border-radius: 20px;
+    transition: color 0.3s, background-color 0.3s;
+}
+
+.tabs:hover,
+.requests:hover {
+    color: #007BFF;
+    background-color: #e6f7ff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .search-bar {
@@ -20,6 +41,9 @@
     position: fixed;
     font-size: 25px;
     align-self: center;
+    padding: 2px 4px;
+    border-radius: 20px;
+    transition: color 0.3s, background-color 0.3s;
 }
 
 .friend-requests-menu {
