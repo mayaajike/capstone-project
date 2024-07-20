@@ -59,8 +59,8 @@ export default function Signup() {
 
   return (
     <div className="signup-container">
+      <h2 className="title">Sign Up!</h2>
       <form className="signup-form" onSubmit={handleSubmit}>
-        <h2>Sign Up</h2>
         <div className="form-group">
           <label htmlFor="firstName">First Name:</label>
           <input
@@ -116,7 +116,7 @@ export default function Signup() {
           />
         </div>
         <div className="form-group">
-          <label htmlFor="passwordAgain">Password Again:</label>
+          <label htmlFor="passwordAgain">Confirm Password:</label>
           <input
             type="password"
             id="passwordAgain"

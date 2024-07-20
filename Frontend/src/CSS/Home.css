@@ -19,7 +19,7 @@
 }
 
 .post:first-child {
-    margin-top: 90px; /* Apply margin-top only to the first child */
+    margin-top: 90px;
 }
 
 .post-content {
