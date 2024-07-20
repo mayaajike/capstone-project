@@ -15,6 +15,7 @@
     "passport-local": "^1.0.0"
   },
   "devDependencies": {
+    "jest": "^29.7.0",
     "prisma": "^5.17.0"
   }
 }
