@@ -536,12 +536,11 @@ function getCompatibilityScore(
     currentFriendTopGenres,
   );
   const jaccardScores = [
-    topSongsJaccard,
-    topArtistJaccard,
-    followedArtistJaccard,
-    likedSongsJaccard,
-    topGenresJaccard,
-  ];
+	topSongsJaccard,
+	topArtistJaccard,
+	followedArtistJaccard,
+	likedSongsJaccard,
+	topGenresJaccard];
   const audioFeaturesCosineSimilarity = calcCosineSimilarity(
     currentUserTopAudioFeatures,
     currentFriendTopAudioFeatures,
