@@ -28,6 +28,7 @@ model User {
   topSongs                        TopSongs[]
   accessToken                     String?
   refreshToken                    String?
+  posts                           Post[]
 }
 
 model SpotifyAccount {
@@ -74,6 +75,17 @@ model Tracks {
   id              String          @id @default(uuid())
   track           String
   artist          String[]
-  TopSongs        TopSongs?       @relation(fields: [topSongsId], references: [id])
-  topSongsId      String?
+  TopSongs        TopSongs[]
+  Posts           Post[]
+}
+
+model Post {
+  id        String    @id @default(uuid())
+  user      User      @relation(fields: [userId], references: [id])
+  userId    String
+  text      String
+  track     Tracks?    @relation(fields: [trackId], references: [id])
+  trackId   String?
+  likes     Int        @default(0)
+  createdAt DateTime @default(now())
 }

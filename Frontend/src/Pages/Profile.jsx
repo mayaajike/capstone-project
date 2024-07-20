@@ -195,11 +195,9 @@ export default function Profile({
 
       <div className="top-songs-container">
         <h3>Top Songs</h3>
-        {topSongs &&
-          topSongs.topSongs &&
-          topSongs.topSongs.map((song, index) => (
+        {topSongs && topSongs.topSongs && topSongs.topSongs.map((song, index) => (
             <div key={index}>
-              <h2 className="song-title">{song.songName}</h2>
+              <h5 className="song-title">{song.songName}</h5>
               <p className="artist-name">{song.artistNames.join(", ")}</p>
             </div>
           ))}

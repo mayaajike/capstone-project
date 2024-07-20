@@ -8,6 +8,7 @@ import Signup from "./Components/Signup";
 import Main from "./Components/Main";
 import Profile from "./Pages/Profile";
 import History from "./Pages/History";
+import Home from "./Pages/Home";
 import SearchProfile from "./Components/SearchProfile";
 import "./App.css";
 import LogoutProvider from "./Context/LogoutProvider";
@@ -78,49 +79,18 @@ export default function App() {
           <BrowserRouter>
             <LogoutProvider>
               <Routes>
-                <Route
-                  path="/"
-                  element={
-                    user ? (
-                      <Main
-                        searchResults={searchResults}
-                        setSearchResults={setSearchResults}
-                        searchQuery={searchQuery}
-                        setSearchQuery={setSearchQuery}
-                        handleSearch={handleSearch}
-                      />
-                    ) : (
-                      <Login />
-                    )
-                  }
-                />
-                <Route path="/login" element={<Login />} />
-                <Route path="/signup" element={<Signup />} />
-                <Route
-                  path="/profile"
-                  element={
-                    <Profile
-                      searchResults={searchResults}
-                      setSearchResults={setSearchResults}
-                      searchQuery={searchQuery}
-                      setSearchQuery={setSearchQuery}
-                      handleSearch={handleSearch}
-                    />
-                  }
-                />
-                <Route
-                  path="/history"
-                  element={
-                    <History
-                      searchResults={searchResults}
-                      setSearchResults={setSearchResults}
-                      searchQuery={searchQuery}
-                      setSearchQuery={setSearchQuery}
-                      handleSearch={handleSearch}
-                    />
-                  }
-                />
-                <Route path="/search-profile" element={<SearchProfile />} />
+                <Route path="/" element={user ? (<Main searchResults={searchResults} setSearchResults={setSearchResults}
+                  searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearch={handleSearch}/>) : (<Login />)}/>
+                <Route path="/login" element={<Login />}/>
+                <Route path="/signup" element={<Signup />}/>
+                <Route path="/home" element={<Home searchResults={searchResults} setSearchResults={setSearchResults}
+                searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearch={handleSearch}/>}/>
+                <Route path="/profile" element={<Profile searchResults={searchResults} setSearchResults={setSearchResults}
+                  searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearch={handleSearch}/>}/>
+                <Route path="/history" element={<History searchResults={searchResults} setSearchResults={setSearchResults}
+                  searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearch={handleSearch}/>}/>
+                <Route path="/search-profile" element={<SearchProfile searchResults={searchResults} setSearchResults={setSearchResults}
+                searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearch={handleSearch}/>} />
               </Routes>
             </LogoutProvider>
           </BrowserRouter>

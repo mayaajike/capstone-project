@@ -1,0 +1,66 @@
+.post-container {
+    width: 85%;
+    margin: 0 auto;
+    margin-top: 80px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+.post {
+    width: 100%;
+    max-width: 800px;
+    background-color: #f0f0f0;
+    padding: 8px;
+    margin-bottom: 25px;
+    border: 2px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.post:first-child {
+    margin-top: 90px; /* Apply margin-top only to the first child */
+}
+
+.post-content {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+.postUsername {
+    position: absolute;
+    top: 10px;
+    left: 35px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 0;
+}
+
+.postSong {
+    font-style: italic;
+    color: #007BFF;
+    margin-bottom: 5px;
+    margin-top: 15px;
+}
+
+.postText {
+    color: #666;
+    margin-bottom: 5px;
+}
+
+.postLike {
+    position: absolute;
+    right: 20px;
+    font-size: 0.9em;
+}
+
+.timestamp {
+    position: absolute;
+    right: 20px;
+    bottom: 10px;
+    color: #999;
+    font-size: 0.9em;
+}

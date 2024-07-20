@@ -6,7 +6,7 @@ import { RefreshTokenContext } from "../Context/RefreshTokenContext";
 import { LogoutContext } from "../Context/LogoutContext";
 import { CircularProgress } from "@mui/material";
 
-export default function SearchProfile() {
+export default function SearchProfile({ searchResults, setSearchResults, searchQuery, setSearchQuery, handleSearch }) {
   const [topSongs, setTopSongs] = useState([]);
   const location = useLocation();
   const data = location.state;
@@ -247,7 +247,8 @@ export default function SearchProfile() {
   }
   return (
     <div className="profile-page">
-      <NavBar />
+      <NavBar searchResults={searchResults} setSearchResults={setSearchResults}
+      searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearch={handleSearch}/>
       <div className="main-content">
         <div className="profile-content">
           <img className="profile-pic" src="https://picsum.photos/200/300" />
@@ -270,7 +271,7 @@ export default function SearchProfile() {
             style={{ color: "white" }}>
             {friendshipConfirmed ? "Friend" : friendshipInitiated ? "Added" : friendshipReceived ? "Accept" : "Follow +"}
           </a>
-          <p className="compatibility-score" style={{ color: compatibility >= 70 ? "green" : compatibility >= 50 ? "orange" : "yellow" }}>
+          <p className="compatibility-score" style={{ color: compatibility >= 70 ? "green" : compatibility >= 50 ? "orange" : "pink" }}>
           {loading ? (
               <CircularProgress color="secondary" />
             ) : (
@@ -313,7 +314,7 @@ export default function SearchProfile() {
           {topSongs && topSongs.topSongs ? (
             topSongs.topSongs.map((song, index) => (
               <div key={index}>
-                <h2 className="song-title">{song.songName}</h2>
+                <h5 className="song-title">{song.songName}</h5>
                 <p className="artist-name">{song.artistNames.join(", ")}</p>
               </div>
             ))

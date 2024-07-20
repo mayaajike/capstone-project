@@ -98,12 +98,10 @@ export default function NavBar({
   );
 
   const navItems = [
-    { label: "Home", href: "/" },
-    { label: "History", href: "/history" },
-    { label: "Your Profile", href: "/profile" },
+    { label: "Home", href: "/home" },
+    { label: "Profile", href: "/profile" },
     { label: "Log Out", onClick: handleLogout },
-    {
-      label: "Search",
+    {label: "Search",
       component: (
         <SearchBar
           handleSearch={handleSearch}
@@ -175,7 +173,7 @@ export default function NavBar({
   return (
     <div>
       <div className="nav-bar">
-        <Nav variant="pills" className="justify-content-center">
+        <Nav className="justify-content-center">
           {navItems.map((item, index) => (
             <Nav.Item
               key={index}
@@ -184,7 +182,7 @@ export default function NavBar({
                   ? "search-bar"
                   : item.label === "Friend Requests"
                     ? "requests"
-                    : ""
+                    : "tabs"
               }
             >
               {item.component ? (
@@ -205,7 +203,7 @@ export default function NavBar({
           onClick={() => setShowFriendRequests(false)}
           className="friend-requests-menu"
         >
-          {friendRequestsList &&
+          {friendRequestsList && friendRequestsList.length > 0 ? (
             friendRequestsList.map((friend, index) => (
               <Dropdown.Item key={index} className="friend-requests-item">
                 {friend}{" "}
@@ -218,7 +216,10 @@ export default function NavBar({
                   onClick={() => acceptFriendRequest(friend)}
                 />
               </Dropdown.Item>
-            ))}
+            ))
+          ) : (
+            <Dropdown.Item>No friend requests</Dropdown.Item>
+          )}
         </Dropdown.Menu>
       )}
     </div>

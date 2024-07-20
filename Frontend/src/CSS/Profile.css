@@ -11,8 +11,8 @@
 }
 .profile-content {
     position: fixed;
-    top: 80px;
-    left: 130px;
+    top: 90px;
+    left: 200px;
     z-index: 1;
     display: grid;
 }
@@ -23,13 +23,13 @@
     border-radius: 50%;
     object-fit: cover;
     position: fixed;
-    top: 80px;
-    left: 130px;
+    top: 90px;
+    left: 200px;
 }
 
 .username {
     top: 125px;
-    left: 320px;
+    left: 390px;
     position: fixed;
     padding: 10px;
     margin-bottom: 3px;
@@ -37,7 +37,7 @@
 
 .follower-count {
     top: 150px;
-    left: 330px;
+    left: 400px;
     position: fixed;
     font-size: 20px;
     font-weight: light;
@@ -46,7 +46,7 @@
 
 .spotify-url {
     top: 175px;
-    left: 330px;
+    left: 400px;
     position: fixed;
     font-size: 16px;
     font-weight: light;
@@ -60,81 +60,114 @@
     padding: 20px;
     background-color: #f9f9f9;
     border-radius: 10px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    position: absolute;
     right: 90px;
     top: 270px;
-    position: absolute;
-  }
+    overflow-y: auto;
+    max-height: 69vh;
+}
+
+.top-songs-container h3 {
+    text-align: center;
+    font-size: 1.5em;
+    color: #333;
+    margin-bottom: 20px;
+}
 
 .song-item {
+    display: flex;
+    flex-direction: column;
     margin-bottom: 15px;
     padding: 10px;
     border-bottom: 1px solid #ddd;
+    transition: background-color 0.3s;
+}
+
+.song-item:hover {
+    background-color: #f0f0f0;
 }
 
 .song-title {
     font-size: 1.2em;
-    font-weight: bold;
-    color: #333;
+    font-weight: 600;
+    color: #666;
+    margin: 0;
 }
 
 .artist-name {
     font-size: 1em;
-    color: #666;
-    margin: 0px 0 5px 0;
+    color: #007BFF;
+    margin: 2px 0 5px 0;
+}
+
+.recently-played {
+    position: relative;
+    margin-left: 200px;
+    margin-top: 270px;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.recently-played-title-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.recently-played-title {
+    font-size: 28px;
+    color: #333;
+}
+
+.recently-played-songs {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    max-height: 600px;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+.recently-played-songs::-webkit-scrollbar,
+.top-songs-container::-webkit-scrollbar {
+    display: none;
 }
 
 .song {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    background-color: lightgrey;
-    border: 2px solid lightgrey;
-    padding: 10px;
-    font-size: 18px;
-    border-radius: 5px;
-    margin: 8px;
+    background-color: #ffffff;
+    border: 1px solid #ddd;
+    padding: 15px;
+    font-size: 16px;
+    border-radius: 8px;
+    margin: 10px 0;
     width: 800px;
-    height: 60px;
-    justify-self: start;
+    max-width: 1000px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s, box-shadow 0.2s;
 }
 
-.song-name,
+.song:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.song-name {
+    font-weight: bold;
+    color: #007BFF;
+    margin: 0 0 5px 0;
+}
+
 .artist-names {
+    color: #666;
     margin: 0;
-}
-
-.recently-played-songs {
-    display: flex;
-    flex-shrink: 1;
-    flex-direction: column;
-    justify-content: center;
-    align-items: flex-start;
-    margin-left: 130px;
-    overflow-y: auto;
-    max-height: 600px;
-}
-
-.recently-played-songs::-webkit-scrollbar {
-    display: none;
-}
-
-.recently-played {
-    margin-top: 250px;
-}
-
-.recently-played-title {
-    position: relative;
-    font-size: 32px;
-    justify-self: left;
-    margin-left: 200px;
-}
-
-.recently-played-title-container {
-    display: grid;
-    margin-top: 20px;
-    margin-bottom: 10px;
-    align-items: flex-start;
+    font-size: 14px;
 }
 
 
@@ -144,16 +177,17 @@
     background-color: blue;
     border-radius: 10px;
     z-index: 1;
-    left: 1000px;
+    left: 1200px;
     top: 80px;
     position: relative;
     font-weight: bold;
     font-size: 17px;
+    cursor: pointer;
 }
 
 .compatibility-score {
     z-index: 3;
-    left: 900px;
+    left: 1100px;
     top: 30px;
     position: relative;
     font-size: 30px;
