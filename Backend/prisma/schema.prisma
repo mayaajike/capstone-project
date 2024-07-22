@@ -29,6 +29,8 @@ model User {
   accessToken                     String?
   refreshToken                    String?
   posts                           Post[]
+  visitedProfiles                 ProfileVisits[]          @relation("visitedUser")
+  profileVisitors                 ProfileVisits[]          @relation("visitorUser")
 }
 
 model SpotifyAccount {
@@ -91,4 +93,14 @@ model Post {
   trackId   String?
   likes     Int        @default(0)
   createdAt DateTime @default(now())
+}
+
+model ProfileVisits {
+  id            String    @id @default(uuid())
+  visitor       User      @relation("visitorUser", fields: [visitorId], references: [id])
+  visitorId     String
+  visited       User      @relation("visitedUser", fields: [visitedId], references: [id])
+  visitedId     String
+  visitedCount  Int       @default(0)
+  lastVisited   DateTime  @updatedAt
 }

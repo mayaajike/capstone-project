@@ -516,7 +516,21 @@ app.post('/like-post', authenticateToken, async (req, res) => {
         likes: { increment: 1 }
       }
     })
-    return res.status(200).json({ messaged: "Post liked successfully!" })
+    return res.status(200).json({ message: "Post liked successfully!" })
+  }
+  res.status(500).json({ error: "Server error" })
+})
+
+app.post('/remove-like', authenticateToken, async (req, res) => {
+  const { post } = req.body;
+  if (post) {
+    await prisma.post.update({
+      where: { id: post.id },
+      data: {
+        likes: { decrement: 1 }
+      }
+    })
+    return res.status(200).json({ message: "Like removed!" })
   }
   res.status(500).json({ error: "Server error" })
 })

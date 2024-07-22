@@ -3,7 +3,7 @@ import NavBar from "../Components/NavBar";
 import { RefreshTokenContext } from "../Context/RefreshTokenContext";
 import { LogoutContext } from "../Context/LogoutContext";
 import '../CSS/Home.css';
-import { FaRegHeart } from "react-icons/fa";
+import { FaHeart } from "react-icons/fa";
 import SearchProfile from "../Components/SearchProfile";
 import { useNavigate } from 'react-router-dom';
 import { CircularProgress } from "@mui/material";
@@ -136,10 +136,13 @@ export default function Home({ searchResults, setSearchResults, searchQuery, set
     }
   };
 
-  const likePost = async (event, post) => {
+  const handleLike = async (event, post) => {
 	event.preventDefault()
+	let endpoint;
+	if (post.likes <= 0 ){ endpoint = 'like-post' }
+	else { endpoint = 'remove-like' }
 	try {
-		const response = await fetch('http://localhost:4700/like-post', {
+		const response = await fetch(`http://localhost:4700/${endpoint}`, {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
@@ -149,7 +152,6 @@ export default function Home({ searchResults, setSearchResults, searchQuery, set
 		})
 		if (response.ok) {
 			const data = await response.json()
-			console.log(data)
 			getPosts()
 		}
 	} catch (error){
@@ -177,9 +179,8 @@ export default function Home({ searchResults, setSearchResults, searchQuery, set
 					  <p className="postArtists">{post.track.artist.map((artist) => artist).join(", ")}</p>
 					  </div>
 					</div>
-				  <p className="postLike" onClick={(event) => likePost(event, post)}>
-						<FaRegHeart />
-						<span>{post.likes}</span>
+				  <p className="postLike" onClick={(event) => handleLike(event, post)}>
+						<FaHeart style={{ color: post.likes === 0 ? 'lightgrey' : 'red' }}/>
 					</p>
 				  <p className="timestamp">{calcTimeStamp(post.createdAt)}</p>
 				  </div>

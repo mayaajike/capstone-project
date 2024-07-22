@@ -93,11 +93,6 @@
     color: #ff0000;
 }
 
-.postLike span {
-    font-weight: bold;
-    margin-left: 5px;
-}
-
 .timestamp {
     position: absolute;
     right: 20px;
