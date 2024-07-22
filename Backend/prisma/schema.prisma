@@ -29,8 +29,8 @@ model User {
   accessToken                     String?
   refreshToken                    String?
   posts                           Post[]
-  visitedProfiles                 ProfileVisits[]          @relation("visitedUser")
-  profileVisitors                 ProfileVisits[]          @relation("visitorUser")
+  visitedProfiles                 ProfileVisits[]          @relation("visitorUser")
+  profileVisitors                 ProfileVisits[]          @relation("visitedUser")
 }
 
 model SpotifyAccount {

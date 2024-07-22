@@ -143,7 +143,7 @@ export default function Home({ searchResults, setSearchResults, searchQuery, set
 	else { endpoint = 'remove-like' }
 	try {
 		const response = await fetch(`http://localhost:4700/${endpoint}`, {
-			method: "POST",
+			method: "PATCH",
 			headers: {
 				"Content-Type": "application/json",
 				"Authorization": `Bearer ${accessToken}`

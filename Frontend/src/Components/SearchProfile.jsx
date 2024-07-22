@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext, useRef } from "react";
 import "../CSS/Profile.css";
 import { useLocation } from "react-router-dom";
 import NavBar from "./NavBar";
@@ -28,14 +28,19 @@ export default function SearchProfile({ searchResults, setSearchResults, searchQ
   const [friends, setFriends] = useState(0)
   const [compatibility, setCompatibility] = useState(null)
   const [loading, setLoading] = useState(true)
+  const hasRunRef = useRef(false);
 
   useEffect(() => {
-    getTopSongs();
-    getRecentlyPlayed();
-    getCompatibility();
-    getSpotify();
-    getFriends();
-    getFriendsCount();
+    if (!hasRunRef.current){
+      hasRunRef.current = true
+      getTopSongs();
+      getRecentlyPlayed();
+      getCompatibility();
+      getSpotify();
+      getFriends();
+      getFriendsCount();
+      visitProfile();
+    }
   }, []);
 
   useEffect(() => {
@@ -244,7 +249,21 @@ export default function SearchProfile({ searchResults, setSearchResults, searchQ
     } catch (error) {
       throw error
     }
+  }
 
+  const visitProfile = async () => {
+    try {
+      const response = await fetch('http://localhost:4700/profile-visit', {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${accessToken}`
+        },
+        body: JSON.stringify({ username: currentUsername, friend: username})
+      })
+    } catch (error) {
+      throw error
+    }
   }
   return (
     <div className="profile-page">

@@ -507,7 +507,7 @@ app.get('/posts', authenticateToken, async (req, res) => {
   res.status(500).json({ error: "Server error" })
 })
 
-app.post('/like-post', authenticateToken, async (req, res) => {
+app.patch('/like-post', authenticateToken, async (req, res) => {
   const { post } = req.body;
   if (post) {
     await prisma.post.update({
@@ -521,7 +521,7 @@ app.post('/like-post', authenticateToken, async (req, res) => {
   res.status(500).json({ error: "Server error" })
 })
 
-app.post('/remove-like', authenticateToken, async (req, res) => {
+app.patch('/remove-like', authenticateToken, async (req, res) => {
   const { post } = req.body;
   if (post) {
     await prisma.post.update({
@@ -569,8 +569,7 @@ app.post('/comp-recently-played', authenticateToken, async (req, res) => {
 
           const existingPost = await prisma.post.findMany({
             where: {
-              OR: [
-                {
+              OR: [{
                   userId: currentUser.id,
                   trackId: newTrack.id,
                   createdAt: {
@@ -584,19 +583,17 @@ app.post('/comp-recently-played', authenticateToken, async (req, res) => {
                     gte: new Date(Date.now() - 24 * 60 * 60 * 1000),
                   },
                 },
-              ],
-            },
-          });
+          ]}});
 
           if (!existingPost) {
-            let friendsPost = await prisma.post.create({
+            await prisma.post.create({
               data: {
                 userId: friend,
                 text: `you and @${username} both listened to: `,
                 trackId: newTrack.id
               }
             })
-            let usersPost = await prisma.post.create({
+            await prisma.post.create({
               data: {
                 userId: currentUser.id,
                 text: `you and @${currentFriend.username} both listened to: `,
@@ -611,6 +608,44 @@ app.post('/comp-recently-played', authenticateToken, async (req, res) => {
   }
 })
 
+app.post('/profile-visit', authenticateToken, async (req, res) => {
+  const { username, friend } = req.body;
+  const currentUser = await findUser(username)
+  const currentFriend = await findUser(friend)
+  try {
+    const profileVisited = await prisma.user.findFirst({
+      where: { username: friend },
+      include: {
+        profileVisitors: true
+      }
+    })
+    const profileVisitors = profileVisited.profileVisitors
+    let record = null;
+    if (profileVisitors) {
+      profileVisitors.forEach((visit) => {
+        if (visit.visitorId === currentUser.id && visit.visitedId === currentFriend.id) {
+          record = visit
+        }
+    })}
+    if (record){
+      await prisma.profileVisits.update({
+        where: { id: record.id },
+        data: { visitedCount: { increment: 1 } }
+      })
+    } else {
+      await prisma.profileVisits.create({
+        data: {
+          visitorId: currentUser.id,
+          visitedId: currentFriend.id,
+          visitedCount: 1
+        }
+      })
+    }
+    res.status(200).json({ message: "Profile visited!" })
+  } catch (error){
+    res.status(500).json({ error: "Server Error" })
+  }
+})
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
