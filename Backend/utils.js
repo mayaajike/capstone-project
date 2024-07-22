@@ -81,7 +81,7 @@ async function updateSpotifyUser(userId, accessToken, refreshToken) {
 }
 
 function generateAccessToken(user) {
-  return jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "10m" });
+  return jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "1h" });
 }
 
 async function generateRandomString(length) {
@@ -261,6 +261,44 @@ async function topArtists(spotifyUser) {
   } catch (error) {
     throw error;
   }
+}
+
+async function getRecentlyPlayed(spotifyUser){
+  try {
+    const response = await fetch('https://api.spotify.com/v1/me/player/recently-played', {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${spotifyUser.accessToken}`
+    }
+  })
+  if (response.ok) {
+    const data = await response.json()
+    const tracks = data.items.map((item) => item.track);
+    return tracks
+  } else if (response.status === 401) {
+    const newAccessToken = await refreshSpotifyToken(spotifyUser);
+    const response = await fetch(
+      "https://api.spotify.com/v1/me/player/recently-played",
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${newAccessToken}`,
+        },
+      },
+    );
+    if (response.ok) {
+      const data = await response.json();
+      const tracks = data.items.map((item) => item.track);
+      return tracks
+    }
+  } else  {
+    return;
+  }
+  } catch (error) {
+    return error
+}
 }
 
 async function followedArtists(spotifyUser) {
@@ -605,6 +643,26 @@ async function usersAudioFeatures(spotifyUser, songIds) {
   return audioFeaturesRes;
 }
 
+function findSimilarities(RPS) {
+  const currentUserKey = Object.keys(RPS[0])[0]
+  const currentUserSongs = new Set(RPS[0][currentUserKey])
+
+  const findIntersection = (firstSet, secondArray) => {
+    return secondArray.filter(song => firstSet.has(song))
+  }
+  let similarities = []
+
+  for (let i = 1; i < RPS.length; i++) {
+    const key = Object.keys(RPS[i])[0]
+    const songs = RPS[i][key]
+    const intersection = findIntersection(currentUserSongs, songs)
+    similarities.push({
+      [currentUserKey + ' & ' + key]: intersection
+    })
+  }
+  return similarities
+}
+
 module.exports = {
   hashPassword,
   verifyPassword,
@@ -640,4 +698,6 @@ module.exports = {
   usersFollowedArtists,
   usersLikedSongs,
   usersAudioFeatures,
+  getRecentlyPlayed,
+  findSimilarities
 };

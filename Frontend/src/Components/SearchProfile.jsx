@@ -5,6 +5,7 @@ import NavBar from "./NavBar";
 import { RefreshTokenContext } from "../Context/RefreshTokenContext";
 import { LogoutContext } from "../Context/LogoutContext";
 import { CircularProgress } from "@mui/material";
+import { FaRegHeart } from "react-icons/fa";
 
 export default function SearchProfile({ searchResults, setSearchResults, searchQuery, setSearchQuery, handleSearch }) {
   const [topSongs, setTopSongs] = useState([]);
@@ -284,7 +285,7 @@ export default function SearchProfile({ searchResults, setSearchResults, searchQ
 
         <div className="recently-played">
           <div className="recently-played-title-container">
-            <h3 className="recently-played-title">Recently Played Songs</h3>
+            <h3 className="recently-played-title">Now Listening</h3>
           </div>
 
           <div className="recently-played-songs">
@@ -296,6 +297,7 @@ export default function SearchProfile({ searchResults, setSearchResults, searchQ
                     <p className="artist-names">
                       {track.artists.map((artist) => artist.name).join(", ")}
                     </p>
+                    <p className="interaction-button"><FaRegHeart /></p>
                   </div>
                 </div>
               ))

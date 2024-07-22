@@ -50,6 +50,7 @@ model Friendship {
   initiatorConfirmed      Boolean               @default(false) // Confirmation from the initiator
   receiverConfirmed       Boolean               @default(false) // Confirmation from the receiver
   confirmedFriendship     ConfirmedFriendship?
+  addedAt                 DateTime              @default(now())
 }
 
  model ConfirmedFriendship {
@@ -74,7 +75,9 @@ model TopSongs {
 model Tracks {
   id              String          @id @default(uuid())
   track           String
+  spotifyId       String          @unique
   artist          String[]
+  albumCover      String
   TopSongs        TopSongs[]
   Posts           Post[]
 }

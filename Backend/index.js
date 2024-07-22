@@ -25,6 +25,9 @@ const {
   findWithId,
   updateUser,
   generateAccessToken,
+  getRecentlyPlayed,
+  findSpotifyUser,
+  findSimilarities
 } = require("./utils");
 
 app.use("/spotify", spotifyRoutes);
@@ -421,6 +424,179 @@ app.post("/decline-request", async (req, res) => {
 
   res.status(200).json({ message: "Friend Request Declined." });
 });
+
+async function getConfirmedFriends(username){
+  let confirmedFriends = []
+    const friends = await prisma.user.findMany({
+      where: {
+        username: username,
+      },
+      include: {
+        confirmedFriendshipsInitiated: {
+          include: { user2: true }
+        },
+        confirmedFriendshipsReceived: {
+          include: { user1: true }
+        }
+      }
+    })
+    friends[0].confirmedFriendshipsInitiated.forEach(friendship => {
+      confirmedFriends.push(friendship.user2Id);
+    });
+    friends[0].confirmedFriendshipsReceived.forEach(friendship => {
+      confirmedFriends.push(friendship.user1Id);
+    });
+  return confirmedFriends
+}
+
+app.post('/share-song', authenticateToken, async (req, res) => {
+  const { track, username } = req.body;
+  try {
+    const albumCover = track.album.images[2].url;
+    const songName = track.name;
+    const spotifySongId = track.id;
+    let artists = [];
+    track.artists.map((artist) => (
+      artists.push(artist.name)
+    ))
+    const confirmedFriends = await getConfirmedFriends(username)
+
+    const newTrack = await prisma.tracks.upsert({
+      where: { spotifyId: spotifySongId },
+      update: {},
+      create: {
+          track: songName,
+          spotifyId: spotifySongId,
+          artist: artists,
+          albumCover: albumCover,
+      }
+    })
+    for (const friend of confirmedFriends) {
+      await prisma.post.create({
+        data: {
+          userId: friend,
+          text: `@${username} is currently listening to: `,
+          trackId: newTrack.id
+        }
+      })
+    }
+    res.status(200).json({ message: "Post created successfully!"})
+  } catch (error){
+    res.status(500).json({ error: "Server error" })
+  }
+})
+
+app.get('/posts', authenticateToken, async (req, res) => {
+  const { username } = req.query;
+  const currentUser = await findUser(username)
+  if (currentUser) {
+    const posts = await prisma.post.findMany({
+      where: {
+        userId: currentUser.id
+      },
+      include: {
+        track: true
+      }
+    })
+
+    res.status(200).json({ posts: posts })
+    return
+  } else {
+    res.status(409).json({ error: "User not found"})
+  }
+  res.status(500).json({ error: "Server error" })
+})
+
+app.post('/like-post', authenticateToken, async (req, res) => {
+  const { post } = req.body;
+  if (post) {
+    await prisma.post.update({
+      where: { id: post.id },
+      data: {
+        likes: { increment: 1 }
+      }
+    })
+    return res.status(200).json({ messaged: "Post liked successfully!" })
+  }
+  res.status(500).json({ error: "Server error" })
+})
+
+// RP = Recently Played
+app.post('/comp-recently-played', authenticateToken, async (req, res) => {
+  const { username } = req.body;
+  const currentUser = await findUser(username)
+  const confirmedFriends = await getConfirmedFriends(username);
+  try {
+    if (confirmedFriends) {
+      const currentSpotifyUser = await findSpotifyUser(currentUser.id);
+      const currentUserRP = await getRecentlyPlayed(currentSpotifyUser);
+      const currentUserRPSet = new Set(currentUserRP.map(song => song.id));
+
+      const friendsData = await Promise.all(confirmedFriends.map(async (friend) => {
+        let friendSpotifyUser = await findSpotifyUser(friend);
+        let friendRP = await getRecentlyPlayed(friendSpotifyUser);
+        return { friend, friendRP };
+      }))
+
+      friendsData.forEach(({ friend, friendRP }) => {
+        let listeningSimilarities = friendRP.filter((song) => currentUserRPSet.has(song.id));
+        listeningSimilarities.forEach(async(song) => {
+          let currentFriend = await findWithId(friend)
+          let newTrack = await prisma.tracks.upsert({
+            where: { spotifyId: song.id },
+            update: {},
+            create: {
+              track: song.name,
+              spotifyId: song.id,
+              artist: song.artists.map(artist => artist.name),
+              albumCover: song.album.images[2].url
+            }
+          });
+
+          const existingPost = await prisma.post.findMany({
+            where: {
+              OR: [
+                {
+                  userId: currentUser.id,
+                  trackId: newTrack.id,
+                  createdAt: {
+                    gte: new Date(Date.now() - 24 * 60 * 60 * 1000),
+                  },
+                },
+                {
+                  userId: friend,
+                  trackId: newTrack.id,
+                  createdAt: {
+                    gte: new Date(Date.now() - 24 * 60 * 60 * 1000),
+                  },
+                },
+              ],
+            },
+          });
+
+          if (!existingPost) {
+            let friendsPost = await prisma.post.create({
+              data: {
+                userId: friend,
+                text: `you and @${username} both listened to: `,
+                trackId: newTrack.id
+              }
+            })
+            let usersPost = await prisma.post.create({
+              data: {
+                userId: currentUser.id,
+                text: `you and @${currentFriend.username} both listened to: `,
+                trackId: newTrack.id
+              }
+            })
+          }
+    })})}
+    res.status(200).json({ message: "Playlists compared successfully" })
+  } catch (error) {
+    res.status(500).json({ error: "Server error" })
+  }
+})
+
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);

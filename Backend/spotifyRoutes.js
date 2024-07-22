@@ -24,6 +24,7 @@ const {
   usersFollowedArtists,
   usersLikedSongs,
   usersAudioFeatures,
+  getRecentlyPlayed
 } = require("./utils");
 
 const clientId = process.env.SPOTIFY_CLIENT_ID;
@@ -203,49 +204,13 @@ router.get("/refresh-tokens", async (req, res) => {
 });
 
 router.get("/recently-played", async (req, res) => {
-  const fetch = await dynamicImportFetch();
   const { username } = req.query || null;
   const currentUser = await findUser(username);
   const spotifyUser = await findSpotifyUser(currentUser.id);
   if (spotifyUser) {
-    const accessToken = spotifyUser.accessToken;
     try {
-      const response = await fetch(
-        "https://api.spotify.com/v1/me/player/recently-played",
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
-          },
-        },
-      );
-      if (response.ok) {
-        const data = await response.json();
-        const tracks = data.items.map((item) => item.track);
-        res.status(200).json({ tracks: tracks });
-      } else if (response.status === 401) {
-        const newAccessToken = await refreshSpotifyToken(spotifyUser);
-        const response = await fetch(
-          "https://api.spotify.com/v1/me/player/recently-played",
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${newAccessToken}`,
-            },
-          },
-        );
-        if (response.ok) {
-          const data = await response.json();
-          const tracks = data.items.map((item) => item.track);
-          res.status(200).json({ tracks: tracks });
-        }
-      } else {
-        res
-          .status(500)
-          .json({ error: "Failed to fetch recently played songs." });
-      }
+      const tracks = await getRecentlyPlayed(spotifyUser);
+      res.status(200).json({ tracks: tracks })
     } catch (error) {
       res.status(500).json({ error: "Server error" });
     }
