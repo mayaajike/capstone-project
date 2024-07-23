@@ -27,7 +27,8 @@ const {
   generateAccessToken,
   getRecentlyPlayed,
   findSpotifyUser,
-  findSimilarities
+  calcInteractionScore,
+  calcRank
 } = require("./utils");
 
 app.use("/spotify", spotifyRoutes);
@@ -451,6 +452,7 @@ async function getConfirmedFriends(username){
 
 app.post('/share-song', authenticateToken, async (req, res) => {
   const { track, username } = req.body;
+  const currentUser = await findUser(username)
   try {
     const albumCover = track.album.images[2].url;
     const songName = track.name;
@@ -475,6 +477,7 @@ app.post('/share-song', authenticateToken, async (req, res) => {
       await prisma.post.create({
         data: {
           userId: friend,
+          friendId: currentUser.id,
           text: `@${username} is currently listening to: `,
           trackId: newTrack.id
         }
@@ -554,6 +557,9 @@ app.post('/comp-recently-played', authenticateToken, async (req, res) => {
 
       friendsData.forEach(({ friend, friendRP }) => {
         let listeningSimilarities = friendRP.filter((song) => currentUserRPSet.has(song.id));
+        listeningSimilarities = listeningSimilarities.filter((song, index, self) =>
+          index === self.findIndex((t) => t.id === song.id)
+        );
         listeningSimilarities.forEach(async(song) => {
           let currentFriend = await findWithId(friend)
           let newTrack = await prisma.tracks.upsert({
@@ -566,11 +572,11 @@ app.post('/comp-recently-played', authenticateToken, async (req, res) => {
               albumCover: song.album.images[2].url
             }
           });
-
           const existingPost = await prisma.post.findMany({
             where: {
               OR: [{
                   userId: currentUser.id,
+                  friendId: friend,
                   trackId: newTrack.id,
                   createdAt: {
                     gte: new Date(Date.now() - 24 * 60 * 60 * 1000),
@@ -578,17 +584,18 @@ app.post('/comp-recently-played', authenticateToken, async (req, res) => {
                 },
                 {
                   userId: friend,
+                  friendId: currentUser.id,
                   trackId: newTrack.id,
                   createdAt: {
                     gte: new Date(Date.now() - 24 * 60 * 60 * 1000),
                   },
                 },
           ]}});
-
-          if (!existingPost) {
+          if (existingPost.length === 0) {
             await prisma.post.create({
               data: {
                 userId: friend,
+                friendId: currentUser.id,
                 text: `you and @${username} both listened to: `,
                 trackId: newTrack.id
               }
@@ -596,6 +603,7 @@ app.post('/comp-recently-played', authenticateToken, async (req, res) => {
             await prisma.post.create({
               data: {
                 userId: currentUser.id,
+                friendId: friend,
                 text: `you and @${currentFriend.username} both listened to: `,
                 trackId: newTrack.id
               }
@@ -646,6 +654,31 @@ app.post('/profile-visit', authenticateToken, async (req, res) => {
     res.status(500).json({ error: "Server Error" })
   }
 })
+// MS = milliseconds
+app.get('/order-posts', async (req, res) => {
+  const { username } = req.query;
+  const currentUser = await findUser(username)
+  try {
+    const user = await prisma.user.findMany({
+      where: { username: username},
+      include: {
+        userPosts: true,
+        friendPosts: true,
+        visitedProfiles: true,
+        profileVisitors: true
+      }
+    })
+    let postData = await calcInteractionScore(currentUser, user)
+    postData = calcRank(postData)
+    res.status(200).json({ postData: postData })
+  } catch (error) {
+    res.status(500).json({ error: "Server error" })
+  }
+})
+
+
+
+
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);

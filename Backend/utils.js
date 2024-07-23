@@ -663,6 +663,74 @@ function findSimilarities(RPS) {
   return similarities
 }
 
+const calcInteractionScore = async(currentUser, user) => {
+  let postData = []
+  const userPosts = user[0].userPosts
+  const friendPosts = user[0].friendPosts
+  const visited = user[0].visitedProfiles
+  const visitors = user[0].profileVisitors
+
+  if (userPosts) {
+    for (const post of userPosts) {
+      const similarTracks = await prisma.post.findMany({
+        where: {
+          trackId: post.trackId,
+          OR: [
+            { userId: currentUser.id },
+            { friendId: currentUser.id }
+    ]}})
+      if (similarTracks) {
+        let likes = 0;
+        similarTracks.forEach((track) => {
+          likes += track.likes
+        })
+        postData.push({ post: post, likes: likes, interactions: 0, weight: 1, interactionScore: 0})
+    }}}
+    const visitorIds = new Set(visitors.map((visitor) => visitor.visitorId));
+    const visitedIds = new Set(visited.map((visited) => visited.visitedId));
+    if (visitorIds && visitedIds) {
+      for (const post of postData) {
+        if (visitorIds.has(post.post.friendId) || visitedIds.has(post.post.friendId)) {
+          post.interactions += 1;
+    }}}
+    for (post of postData){
+      if (post.post.text.includes("currently")) {
+        post.weight += 1
+    }}
+    for (post of postData) {
+      post.interactionScore = (post.likes + post.interactions) * post.weight
+    }
+  return postData
+}
+
+function calcTimeSincePost(postData) {
+  for (const post of postData){
+    const now = new Date()
+    const timeDiff = now.getTime() - post.post.createdAt.getTime()
+    const hoursSincePost = (timeDiff / 3600000).toFixed(4);
+    post.decayFactor = (parseFloat(hoursSincePost) / 2) ** 0.95
+  }
+  return postData
+}
+
+function calcOrder(postData) {
+  for (const post of postData){
+    const order = Math.log10(Math.max(post.interactionScore, 1)).toFixed(3)
+    post.order = parseFloat(order)
+  }
+  return postData
+}
+
+function calcRank(postData) {
+  postData = calcTimeSincePost(postData)
+  postData = calcOrder(postData)
+  for (const post of postData) {
+    const numerator = (post.interactionScore * post.order)
+    post.rank = (numerator / post.decayFactor)
+  }
+  return postData
+}
+
 module.exports = {
   hashPassword,
   verifyPassword,
@@ -699,5 +767,9 @@ module.exports = {
   usersLikedSongs,
   usersAudioFeatures,
   getRecentlyPlayed,
-  findSimilarities
+  findSimilarities,
+  calcInteractionScore,
+  calcTimeSincePost,
+  calcOrder,
+  calcRank
 };
