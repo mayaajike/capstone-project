@@ -3,6 +3,7 @@ import NavBar from "../Components/NavBar";
 import "../CSS/Profile.css";
 import { RefreshTokenContext } from "../Context/RefreshTokenContext";
 import { LogoutContext } from "../Context/LogoutContext";
+import { FaShare } from "react-icons/fa6";
 
 export default function Profile({
   searchResults,
@@ -139,6 +140,25 @@ export default function Profile({
     }
   };
 
+  const shareSong = async (track) => {
+    try {
+      const response = await fetch('http://localhost:4700/share-song', {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${currentAccessToken}`
+        },
+        body: JSON.stringify({ track, username})
+      })
+      if (response.ok) {
+        const data = await response.json()
+        console.log(data)
+      }
+    } catch (error) {
+      throw error
+    }
+  }
+
   return (
     <div className="profile-page">
       <NavBar
@@ -173,7 +193,7 @@ export default function Profile({
 
         <div className="recently-played">
           <div className="recently-played-title-container">
-            <h3 className="recently-played-title">Recently Played Songs</h3>
+            <h3 className="recently-played-title">Now Listening</h3>
           </div>
 
           <div className="recently-played-songs">
@@ -186,6 +206,7 @@ export default function Profile({
                     <p className="artist-names">
                       {track.artists.map((artist) => artist.name).join(", ")}
                     </p>
+                    <p className="interaction-button" onClick={() => shareSong(track)}><FaShare /></p>
                   </div>
                 </div>
               ))}

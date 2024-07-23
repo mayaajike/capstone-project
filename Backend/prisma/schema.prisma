@@ -29,6 +29,8 @@ model User {
   accessToken                     String?
   refreshToken                    String?
   posts                           Post[]
+  visitedProfiles                 ProfileVisits[]          @relation("visitorUser")
+  profileVisitors                 ProfileVisits[]          @relation("visitedUser")
 }
 
 model SpotifyAccount {
@@ -50,6 +52,7 @@ model Friendship {
   initiatorConfirmed      Boolean               @default(false) // Confirmation from the initiator
   receiverConfirmed       Boolean               @default(false) // Confirmation from the receiver
   confirmedFriendship     ConfirmedFriendship?
+  addedAt                 DateTime              @default(now())
 }
 
  model ConfirmedFriendship {
@@ -74,7 +77,9 @@ model TopSongs {
 model Tracks {
   id              String          @id @default(uuid())
   track           String
+  spotifyId       String          @unique
   artist          String[]
+  albumCover      String
   TopSongs        TopSongs[]
   Posts           Post[]
 }
@@ -88,4 +93,14 @@ model Post {
   trackId   String?
   likes     Int        @default(0)
   createdAt DateTime @default(now())
+}
+
+model ProfileVisits {
+  id            String    @id @default(uuid())
+  visitor       User      @relation("visitorUser", fields: [visitorId], references: [id])
+  visitorId     String
+  visited       User      @relation("visitedUser", fields: [visitedId], references: [id])
+  visitedId     String
+  visitedCount  Int       @default(0)
+  lastVisited   DateTime  @updatedAt
 }

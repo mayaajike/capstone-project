@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext, useRef } from "react";
 import "../CSS/Profile.css";
 import { useLocation } from "react-router-dom";
 import NavBar from "./NavBar";
 import { RefreshTokenContext } from "../Context/RefreshTokenContext";
 import { LogoutContext } from "../Context/LogoutContext";
 import { CircularProgress } from "@mui/material";
+import { FaRegHeart } from "react-icons/fa";
 
 export default function SearchProfile({ searchResults, setSearchResults, searchQuery, setSearchQuery, handleSearch }) {
   const [topSongs, setTopSongs] = useState([]);
@@ -27,14 +28,19 @@ export default function SearchProfile({ searchResults, setSearchResults, searchQ
   const [friends, setFriends] = useState(0)
   const [compatibility, setCompatibility] = useState(null)
   const [loading, setLoading] = useState(true)
+  const hasRunRef = useRef(false);
 
   useEffect(() => {
-    getTopSongs();
-    getRecentlyPlayed();
-    getCompatibility();
-    getSpotify();
-    getFriends();
-    getFriendsCount();
+    if (!hasRunRef.current){
+      hasRunRef.current = true
+      getTopSongs();
+      getRecentlyPlayed();
+      getCompatibility();
+      getSpotify();
+      getFriends();
+      getFriendsCount();
+      visitProfile();
+    }
   }, []);
 
   useEffect(() => {
@@ -243,7 +249,21 @@ export default function SearchProfile({ searchResults, setSearchResults, searchQ
     } catch (error) {
       throw error
     }
+  }
 
+  const visitProfile = async () => {
+    try {
+      const response = await fetch('http://localhost:4700/profile-visit', {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${accessToken}`
+        },
+        body: JSON.stringify({ username: currentUsername, friend: username})
+      })
+    } catch (error) {
+      throw error
+    }
   }
   return (
     <div className="profile-page">
@@ -284,7 +304,7 @@ export default function SearchProfile({ searchResults, setSearchResults, searchQ
 
         <div className="recently-played">
           <div className="recently-played-title-container">
-            <h3 className="recently-played-title">Recently Played Songs</h3>
+            <h3 className="recently-played-title">Now Listening</h3>
           </div>
 
           <div className="recently-played-songs">
@@ -296,6 +316,7 @@ export default function SearchProfile({ searchResults, setSearchResults, searchQ
                     <p className="artist-names">
                       {track.artists.map((artist) => artist.name).join(", ")}
                     </p>
+                    <p className="interaction-button"><FaRegHeart /></p>
                   </div>
                 </div>
               ))
