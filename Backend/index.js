@@ -736,6 +736,66 @@ app.get("/discover", async (req, res) => {
 })
 
 
+app.post('/like-song', async (req, res) => {
+  const { track, username } = req.body;
+  const currentUser = await findUser(username)
+  try {
+    const albumCover = track.album.images[2].url;
+    const songName = track.name;
+    const spotifySongId = track.id;
+    let artists = [];
+    track.artists.map((artist) => (
+      artists.push(artist.name)
+    ))
+
+    const likedPlaylist = await prisma.user.findFirst({
+      where: { username: username },
+      include: {
+        LikedSongs: true
+      }
+    })
+    const likedSongs = likedPlaylist.LikedSongs
+    const newTrack = await prisma.tracks.upsert({
+      where: { spotifyId: spotifySongId },
+      update: {},
+      create: {
+        track: songName,
+        spotifyId: spotifySongId,
+        artist: artists,
+        albumCover: albumCover
+      }
+    })
+    const liked = await prisma.LikedSongs.create({
+      data: {
+        userId: currentUser.id,
+        trackId: newTrack.id
+      }
+    })
+    res.status(200).json({ message: "Song Liked!" })
+  } catch(error) {
+    res.status(500).json({ error: "Server error" })
+  }
+})
+
+app.get('/liked-songs', async (req, res) => {
+  const { username } = req.query;
+  try {
+    const user = await prisma.user.findFirst({
+      where: { username: username },
+      include: {
+        LikedSongs: {
+          include: {
+            track: true
+          }
+        }
+      }
+    })
+    const likedSongs = user.LikedSongs
+    return res.status(200).json({ likedSongs: likedSongs })
+  } catch (error) {
+    res.status(500).json({ error: "Server error" })
+  }
+})
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);

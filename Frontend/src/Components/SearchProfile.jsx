@@ -265,6 +265,21 @@ export default function SearchProfile({ searchResults, setSearchResults, searchQ
       throw error
     }
   }
+
+  const likeSong = async (track) => {
+    try {
+      const response = await fetch('http://localhost:4700/like-song', {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${accessToken}`
+        },
+        body: JSON.stringify({ track: track, username: currentUsername})
+      })
+    } catch (error) {
+      throw error
+    }
+  }
   return (
     <div className="profile-page">
       <NavBar searchResults={searchResults} setSearchResults={setSearchResults}
@@ -316,7 +331,7 @@ export default function SearchProfile({ searchResults, setSearchResults, searchQ
                     <p className="artist-names">
                       {track.artists.map((artist) => artist.name).join(", ")}
                     </p>
-                    <p className="interaction-button"><FaRegHeart /></p>
+                    <p className="interaction-button" onClick={() => likeSong(track)}><FaRegHeart /></p>
                   </div>
                 </div>
               ))
