@@ -20,12 +20,14 @@ export default function App() {
   });
   const [searchResults, setSearchResults] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [spotifyUser, setSpotifyUser] = useState(null)
 
   const updateUser = (newUser) => {
     setUser(newUser);
   };
 
   useEffect(() => {
+    getSpotify()
     localStorage.setItem("user", JSON.stringify(user));
   }, [user]);
 
@@ -51,8 +53,7 @@ export default function App() {
     if (user && user.username) {
       const username = user.username;
       if (!refreshToken) {
-        alert("Refresh token is missing");
-        return;
+        throw new Error("Refresh token is missing");
       }
       try {
         const response = await fetch("http://localhost:4700/token", {
@@ -67,10 +68,28 @@ export default function App() {
         localStorage.setItem("accessToken", accessToken);
         localStorage.setItem("refreshToken", refreshToken);
       } catch (error) {
-        alert("Failed to refresh token " + error);
+        throw error;
       }
     }
   };
+
+  const getSpotify = async () => {
+    try {
+      const response = await fetch(`http://localhost:4700/user-spotify?userId=${user.id}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${accessToken}`
+        }
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setSpotifyUser(data)
+      }
+    } catch (error){
+      return;
+    }
+  }
 
   return (
     <div className="app">
@@ -79,8 +98,17 @@ export default function App() {
           <BrowserRouter>
             <LogoutProvider>
               <Routes>
-                <Route path="/" element={user ? (<Main searchResults={searchResults} setSearchResults={setSearchResults}
-                  searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearch={handleSearch}/>) : (<Login />)}/>
+              <Route path="/" element={
+                  user && spotifyUser !== null ? (
+                    <Home searchResults={searchResults} setSearchResults={setSearchResults}
+                          searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearch={handleSearch}/>
+                  ) : user ? (
+                    <Main searchResults={searchResults} setSearchResults={setSearchResults}
+                          searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearch={handleSearch}/>
+                  ) : (
+                    <Login />
+                  )
+                }/>
                 <Route path="/login" element={<Login />}/>
                 <Route path="/signup" element={<Signup />}/>
                 <Route path="/home" element={<Home searchResults={searchResults} setSearchResults={setSearchResults}
@@ -90,6 +118,8 @@ export default function App() {
                 <Route path="/history" element={<History searchResults={searchResults} setSearchResults={setSearchResults}
                   searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearch={handleSearch}/>}/>
                 <Route path="/search-profile" element={<SearchProfile searchResults={searchResults} setSearchResults={setSearchResults}
+                searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearch={handleSearch}/>} />
+                <Route path="/main" element={<Main searchResults={searchResults} setSearchResults={setSearchResults}
                 searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearch={handleSearch}/>} />
               </Routes>
             </LogoutProvider>

@@ -74,6 +74,15 @@ app.get("/spotify-accounts", async (req, res) => {
   res.json(accounts);
 });
 
+app.get('/user-spotify', async (req, res) => {
+  const { userId } = req.query;
+  const userSpotify = await findSpotifyUser(userId)
+  if (userSpotify) {
+    return res.status(200).json(userSpotify)
+  }
+  return
+})
+
 app.post("/users/signup", async (req, res) => {
   const { firstName, lastName, username, email, password, passwordAgain } =
     req.body;
@@ -528,14 +537,17 @@ app.post('/comp-recently-played', authenticateToken, async (req, res) => {
       const currentSpotifyUser = await findSpotifyUser(currentUser.id);
       const currentUserRP = await getRecentlyPlayed(currentSpotifyUser);
       const currentUserRPSet = new Set(currentUserRP.map(song => song.id));
-
       const friendsData = await Promise.all(confirmedFriends.map(async (friend) => {
         let friendSpotifyUser = await findSpotifyUser(friend);
-        let friendRP = await getRecentlyPlayed(friendSpotifyUser);
-        return { friend, friendRP };
+        if (friendSpotifyUser){
+          let friendRP = await getRecentlyPlayed(friendSpotifyUser);
+          return { friend, friendRP };
+        } else {
+          return null
+        }
       }))
-
-      friendsData.forEach(({ friend, friendRP }) => {
+      const filteredFriendsData = friendsData.filter((friend) => friend !== null)
+      filteredFriendsData.forEach(({ friend, friendRP }) => {
         let listeningSimilarities = friendRP.filter((song) => currentUserRPSet.has(song.id));
         listeningSimilarities = listeningSimilarities.filter((song, index, self) =>
           index === self.findIndex((t) => t.id === song.id)
@@ -635,7 +647,7 @@ app.post('/profile-visit', authenticateToken, async (req, res) => {
   }
 })
 
-app.get('/posts', async (req, res) => {
+app.get('/posts', authenticateToken, async (req, res) => {
   const { username } = req.query;
   const currentUser = await findUser(username)
   try {
@@ -659,7 +671,7 @@ app.get('/posts', async (req, res) => {
       maxHeap.insert(post)
     })
     const posts = []
-    while(maxHeap.size > 0){
+    while (maxHeap.size > 0){
       const maxPost = maxHeap.removeMax();
       posts.push(maxPost.post)
     }
@@ -668,6 +680,61 @@ app.get('/posts', async (req, res) => {
     res.status(500).json({ error: "Server error" })
   }
 })
+
+app.get("/discover", async (req, res) => {
+  const { username } = req.query;
+  const currentUser = await findUser(username)
+  try {
+    const user = await prisma.user.findFirst({
+      where: { username: username},
+      include: {
+        confirmedFriendshipsInitiated: true,
+        confirmedFriendshipsReceived: true,
+      }
+    })
+    let confirmedFriends = []
+    user.confirmedFriendshipsInitiated.forEach((friendship) => {
+      confirmedFriends.push(friendship.user2Id)
+    })
+    user.confirmedFriendshipsReceived.forEach((friendship) => {
+      confirmedFriends.push(friendship.user1Id)
+    })
+    let newFriends = []
+    for (const friend of confirmedFriends){
+      const newFriend = await prisma.user.findFirst({
+        where: { id: friend },
+        include: {
+          confirmedFriendshipsInitiated: true,
+          confirmedFriendshipsReceived: true,
+        }
+      })
+      newFriend.confirmedFriendshipsInitiated.forEach((friendship) => {
+        newFriends.push(friendship.user2Id)
+      })
+      newFriend.confirmedFriendshipsReceived.forEach((friendship) => {
+        newFriends.push(friendship.user1Id)
+      })
+    }
+    newFriends = newFriends.filter((friend) => {
+      return !confirmedFriends.includes(friend) && friend !== user.id;
+    });
+    if (newFriends.length >= 1) {
+      let results = []
+      for (const friend of newFriends){
+        const profile = await findWithId(friend)
+        if (profile){
+          results.push(profile)
+        }
+      }
+      return res.status(200).json({ newFriends: results })
+    } else {
+      return res.status(204).json({ message: "No potential new friends found :( "})
+    }
+  }catch (error) {
+    res.status(500).json({ error: "Server error" })
+  }
+})
+
 
 
 app.listen(PORT, () => {
