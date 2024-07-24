@@ -79,10 +79,10 @@ export default function Main({
         const authorizationUrl = data.authorizationUrl;
         window.location.href = authorizationUrl;
       } else {
-        alert("Error fetching authorization URL");
+        throw new Error("Error fetching authorization URL");
       }
     } catch (error) {
-      alert("Error fetching authorization URL: " + error);
+      throw new Error("Error fetching authorization URL: " + error);
     }
   };
 
@@ -124,11 +124,11 @@ export default function Main({
             );
           }
         } else {
-          alert("Failed to fetch tokens ", response.statusText);
+          throw new Error("Failed to fetch tokens ", response.statusText);
         }
         navigate("/profile");
       } catch (error) {
-        alert("Failed to fetch tokens ", error);
+        throw new Error("Failed to fetch tokens ", error);
       }
     }
   };
@@ -183,7 +183,7 @@ export default function Main({
         throw new Error(errorMessage);
       }
     } catch (error) {
-      alert("Unable to save tokens ", error);
+      throw new Error("Unable to save tokens ", error);
     }
   };
 

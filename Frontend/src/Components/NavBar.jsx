@@ -218,7 +218,7 @@ export default function NavBar({
               </Dropdown.Item>
             ))
           ) : (
-            <Dropdown.Item>No friend requests</Dropdown.Item>
+            <Dropdown.Item>No new friend requests</Dropdown.Item>
           )}
         </Dropdown.Menu>
       )}
