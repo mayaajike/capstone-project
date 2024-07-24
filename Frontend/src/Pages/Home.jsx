@@ -60,7 +60,7 @@ export default function Home({ searchResults, setSearchResults, searchQuery, set
 			})
 			if (postsResponse.ok) {
 				const data = await postsResponse.json()
-				SetPosts(data.posts)
+        SetPosts(data.posts)
 				setLoading(false)
 			}
 			}

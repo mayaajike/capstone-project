@@ -731,6 +731,83 @@ function calcRank(postData) {
   return postData
 }
 
+class MaxHeap {
+  constructor() {
+    this.storage = [];
+    this.size = 0
+  }
+
+  getParentIndex(index) {
+    return Math.floor((index - 1) / 2)
+  }
+  getLeftChildIndex(index){
+    return 2 * index + 1;
+  }
+  getRightChildIndex(index){
+    return 2 * index + 2;
+  }
+
+  hasParent(index){
+    return this.getParentIndex(index) >= 0;
+  }
+  hasLeftChild(index){
+    return this.getLeftChildIndex(index) < this.size;
+  }
+  hasRightChild(index){
+    return this.getRightChildIndex(index) < this.size
+  }
+
+  parentRank(index){
+    return this.storage[this.getParentIndex(index)].rank
+  }
+  leftChildRank(index){
+    return this.storage[this.getLeftChildIndex(index)].rank
+  }
+  rightChildRank(index){
+    return this.storage[this.getRightChildIndex(index)].rank
+  }
+
+  swap(index1, index2){
+    let temp = this.storage[index1];
+    this.storage[index1] = this.storage[index2];
+    this.storage[index2] = temp;
+  }
+
+  insert(data) {
+    this.storage[this.size] = data
+    this.size += 1
+    this.heapifyUp(this.size - 1);
+  }
+
+  heapifyUp(index){
+    if (this.hasParent(index) && this.parentRank(index) < this.storage[index].rank) {
+      this.swap(this.getParentIndex(index), index);
+      this.heapifyUp(this.getParentIndex(index));
+    }
+  }
+
+  heapifyDown(index){
+    let largest = index;
+    if (this.hasLeftChild(index) && this.storage[largest].rank < this.leftChildRank(index))
+      largest = this.getLeftChildIndex(index)
+    if (this.hasRightChild(index) && this.storage[largest].rank < this.rightChildRank(index))
+      largest = this.getRightChildIndex(index)
+    if (largest != index){
+      this.swap(index, largest)
+      this.heapifyDown(largest)
+    }
+  }
+
+  removeMax(){
+    if (this.size === 0) { throw new Error("Empty Heap")};
+    let maxRank = this.storage[0];
+    this.storage[0] = this.storage.pop()
+    this.size -= 1
+    this.heapifyDown(0)
+    return maxRank
+  }
+ }
+
 module.exports = {
   hashPassword,
   verifyPassword,
@@ -771,5 +848,6 @@ module.exports = {
   calcInteractionScore,
   calcTimeSincePost,
   calcOrder,
-  calcRank
+  calcRank,
+  MaxHeap
 };

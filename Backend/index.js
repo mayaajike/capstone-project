@@ -28,7 +28,8 @@ const {
   getRecentlyPlayed,
   findSpotifyUser,
   calcInteractionScore,
-  calcRank
+  calcRank,
+  MaxHeap
 } = require("./utils");
 
 app.use("/spotify", spotifyRoutes);
@@ -489,27 +490,6 @@ app.post('/share-song', authenticateToken, async (req, res) => {
   }
 })
 
-app.get('/posts', authenticateToken, async (req, res) => {
-  const { username } = req.query;
-  const currentUser = await findUser(username)
-  if (currentUser) {
-    const posts = await prisma.post.findMany({
-      where: {
-        userId: currentUser.id
-      },
-      include: {
-        track: true
-      }
-    })
-
-    res.status(200).json({ posts: posts })
-    return
-  } else {
-    res.status(409).json({ error: "User not found"})
-  }
-  res.status(500).json({ error: "Server error" })
-})
-
 app.patch('/like-post', authenticateToken, async (req, res) => {
   const { post } = req.body;
   if (post) {
@@ -654,15 +634,19 @@ app.post('/profile-visit', authenticateToken, async (req, res) => {
     res.status(500).json({ error: "Server Error" })
   }
 })
-// MS = milliseconds
-app.get('/order-posts', async (req, res) => {
+
+app.get('/posts', async (req, res) => {
   const { username } = req.query;
   const currentUser = await findUser(username)
   try {
     const user = await prisma.user.findMany({
       where: { username: username},
       include: {
-        userPosts: true,
+        userPosts: {
+          include: {
+            track: true
+          }
+        },
         friendPosts: true,
         visitedProfiles: true,
         profileVisitors: true
@@ -670,14 +654,20 @@ app.get('/order-posts', async (req, res) => {
     })
     let postData = await calcInteractionScore(currentUser, user)
     postData = calcRank(postData)
-    res.status(200).json({ postData: postData })
+    const maxHeap = new MaxHeap();
+    postData.forEach((post) => {
+      maxHeap.insert(post)
+    })
+    const posts = []
+    while(maxHeap.size > 0){
+      const maxPost = maxHeap.removeMax();
+      posts.push(maxPost.post)
+    }
+    res.status(200).json({ posts: posts })
   } catch (error) {
     res.status(500).json({ error: "Server error" })
   }
 })
-
-
-
 
 
 app.listen(PORT, () => {
