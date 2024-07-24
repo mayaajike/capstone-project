@@ -3,7 +3,6 @@ import NavBar from "../Components/NavBar";
 import { RefreshTokenContext } from "../Context/RefreshTokenContext";
 import { LogoutContext } from "../Context/LogoutContext";
 import '../CSS/Home.css';
-import SearchProfile from "../Components/SearchProfile";
 import { CircularProgress } from "@mui/material";
 import Discover from "../Components/Discover";
 import Posts from "../Components/Posts";

@@ -1,4 +1,3 @@
-/* Pagination bar container */
 .pagination {
     display: flex;
     justify-content: center;
@@ -9,8 +8,6 @@
     border-radius: 8px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
-
-/* Pagination button */
 .pagination button {
     background-color: #fff;
     border: 2px solid #ccc;
@@ -23,14 +20,12 @@
     transition: background-color 0.3s, color 0.3s, box-shadow 0.3s;
 }
 
-/* Hover effect for pagination button */
 .pagination button:hover {
     background-color: #007BFF;
     color: #fff;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-/* Active pagination button */
 .pagination button.active {
     background-color: #007BFF;
     color: #fff;
@@ -38,7 +33,6 @@
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-/* Disabled pagination button */
 .pagination button:disabled {
     background-color: #eee;
     color: #999;
@@ -46,7 +40,6 @@
     cursor: not-allowed;
 }
 
-/* Responsive adjustments */
 @media (max-width: 768px) {
     .pagination {
         flex-wrap: wrap;
