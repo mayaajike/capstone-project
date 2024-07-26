@@ -162,6 +162,7 @@
 .song:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
 }
 
 .song-name {
@@ -255,6 +256,38 @@
     margin-bottom: 10px;
 }
 
+.tool-tip {
+    display: none;
+    position: absolute;
+    background-color: lightgrey;
+    border: 1px solid #ddd;
+    padding: 5px 10px;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    font-size: 14px;
+    color: #333;
+    max-width: 250px;
+    z-index: 10;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    margin-top: 5px;
+    height: 50px;
+}
+
+.tool-tip a {
+    color: #007BFF;
+    text-decoration: none;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.tool-tip a:hover {
+    text-decoration: underline;
+}
+
+.song:hover .tool-tip {
+    display: block;
+}
 
 @media (max-width: 1200px) {
     .song {

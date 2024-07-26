@@ -29,7 +29,6 @@ export default function Discover({ user, searchResults, setSearchResults, search
             })
             if (response.status === 200){
                 const data = await response.json()
-                console.log(data)
                 setNewFriends(data.newFriends)
             }
         } catch (error){

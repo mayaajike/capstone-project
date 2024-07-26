@@ -2,7 +2,7 @@ import React, { useContext, useState, useEffect } from 'react'
 import Modal from 'react-bootstrap/Modal'
 import { RefreshTokenContext } from "../Context/RefreshTokenContext";
 import '../CSS/Playlist.css'
-
+import StarCursorTrail from './StarCursorTrail';
 
 export default function({ show, onHide, accessToken, username }) {
     const refreshToken = useContext(RefreshTokenContext);
@@ -86,13 +86,14 @@ export default function({ show, onHide, accessToken, username }) {
 
     return (
         <div>
+          <StarCursorTrail />
             <Modal size="lg" aria-labelledby="contained-modal-title-vcenter" centered show={show}>
                 <Modal.Header id="contained-modal-title-vcenter">
                     <h3>{username}'s liked songs</h3>
                 </Modal.Header>
                 <Modal.Body>
                     <div className='liked-songs'>
-                        {likedSongs && likedSongs.map((song, index) => (
+                        {likedSongs?.length ? (likedSongs.map((song, index) => (
                             <div key={index}>
                                 <div className='liked-song-info'>
                                     <img src={song.track.albumCover} alt="Album Cover" className='liked-album-cover' />
@@ -103,7 +104,11 @@ export default function({ show, onHide, accessToken, username }) {
                                     <p className='liked-at'>{calcTimeStamp(song.likedAt)}</p>
                                 </div>
                             </div>
-                        ))}
+                        ))) : (
+                          <div className='liked-song-info'>
+                            <p>No Liked Songs</p>
+                          </div>
+                        )}
                     </div>
                 </Modal.Body>
                 <Modal.Footer>

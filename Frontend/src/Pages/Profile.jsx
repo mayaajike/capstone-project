@@ -6,6 +6,7 @@ import { LogoutContext } from "../Context/LogoutContext";
 import { FaShare } from "react-icons/fa6";
 import { useNavigate } from "react-router-dom"
 import Playlist from "../Components/Playlist";
+import StarCursorTrail from "../Components/StarCursorTrail";
 
 export default function Profile({
   searchResults,
@@ -152,18 +153,14 @@ export default function Profile({
         },
         body: JSON.stringify({ track, username})
       })
-      if (response.ok) {
-        const data = await response.json()
-        console.log(data)
-      }
     } catch (error) {
       throw error
     }
   }
 
-
   return (
     <div className="profile-page">
+      <StarCursorTrail />
       <NavBar
         searchResults={searchResults}
         setSearchResults={setSearchResults}
@@ -214,11 +211,16 @@ export default function Profile({
               recentlyPlayed.tracks.map((track, index) => (
                 <div key={index}>
                   <div className="song">
-                    <p className="song-name">{track.name}</p>
-                    <p className="artist-names">
-                      {track.artists.map((artist) => artist.name).join(", ")}
-                    </p>
+                    <div className="song-info" onClick={() => window.open(track.external_urls.spotify, '_blank')}>
+                      <p className="song-name">{track.name}</p>
+                      <p className="artist-names">
+                        {track.artists.map((artist) => artist.name).join(", ")}
+                      </p>
+                    </div>
                     <p className="interaction-button" onClick={() => shareSong(track)}><FaShare /></p>
+                    <div className="tool-tip">
+                      <a href={track.external_urls.spotify} target="_blank"> {track.external_urls.spotify}</a>
+                    </div>
                   </div>
                 </div>
               ))
