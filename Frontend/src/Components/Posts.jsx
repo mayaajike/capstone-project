@@ -1,10 +1,23 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { FaHeart } from "react-icons/fa";
 import { useNavigate } from "react-router-dom"
 import SearchProfile from './SearchProfile';
+import "../CSS/Home.css"
 
-export default function Posts({ posts, accessToken, getPosts }) {
+export default function Posts({ posts, accessToken }) {
     const navigate = useNavigate()
+    const [likedPosts, setLikedPosts] = useState({});
+
+    useEffect(() => {
+        const initialLikedPosts = {}
+        posts.forEach((post) => {
+            initialLikedPosts[post.id] = post.liked > 1;
+        })
+        setLikedPosts(initialLikedPosts)
+    }, [posts])
+
+
+
     const calcTimeStamp = (timestamp) => {
         const now = new Date();
         const postDate = new Date(timestamp)
@@ -65,8 +78,11 @@ export default function Posts({ posts, accessToken, getPosts }) {
         }
       };
 
-      const handleLike = async (event, post) => {
-        event.preventDefault()
+      const handleLike = async (post) => {
+        setLikedPosts(prevState => ({
+            ...prevState,
+            [post.id]: !prevState[post.id]
+        }));
         let endpoint;
         if (post.likes <= 0 ){ endpoint = 'like-post' }
         else { endpoint = 'remove-like' }
@@ -79,14 +95,11 @@ export default function Posts({ posts, accessToken, getPosts }) {
                 },
                 body: JSON.stringify({ post })
             })
-            if (response.ok) {
-                const data = await response.json()
-                getPosts()
-            }
         } catch (error){
             throw error
         }
-      }
+    }
+
     return (
         posts.map((post, index) => (
             <div className="post" key={index}>
@@ -100,8 +113,8 @@ export default function Posts({ posts, accessToken, getPosts }) {
                   <p className="postArtists">{post.track.artist.map((artist) => artist).join(", ")}</p>
                   </div>
                 </div>
-                <p className="postLike" onClick={(event) => handleLike(event, post)}>
-                  <FaHeart style={{ color: post.likes === 0 ? 'lightgrey' : 'red' }}/>
+                <p className="postLike" onClick={(event) => handleLike(post)}>
+                    <FaHeart style={{ color: post.likes > 0 ? 'red' : likedPosts[post.id] ? 'red' : 'lightgrey' }} />
                 </p>
                 <p className="timestamp">{calcTimeStamp(post.createdAt)}</p>
               </div>

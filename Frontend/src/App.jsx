@@ -7,7 +7,6 @@ import Login from "./Components/Login";
 import Signup from "./Components/Signup";
 import Main from "./Components/Main";
 import Profile from "./Pages/Profile";
-import History from "./Pages/History";
 import Home from "./Pages/Home";
 import SearchProfile from "./Components/SearchProfile";
 import "./App.css";
@@ -85,9 +84,11 @@ export default function App() {
       if (response.ok) {
         const data = await response.json()
         setSpotifyUser(data)
+      } else if (response.status === 409){
+        setSpotifyUser(null)
       }
     } catch (error){
-      return;
+      setSpotifyUser(null)
     }
   }
 
@@ -99,10 +100,11 @@ export default function App() {
             <LogoutProvider>
               <Routes>
               <Route path="/" element={
-                  user && spotifyUser !== null ? (
+                  user && spotifyUser  ? (
                     <Home searchResults={searchResults} setSearchResults={setSearchResults}
-                          searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearch={handleSearch}/>
-                  ) : user ? (
+                          searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearch={handleSearch} setSpotifyUser={setSpotifyUser}/>
+                  ) :
+                  user ? (
                     <Main searchResults={searchResults} setSearchResults={setSearchResults}
                           searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearch={handleSearch}/>
                   ) : (
@@ -114,8 +116,6 @@ export default function App() {
                 <Route path="/home" element={<Home searchResults={searchResults} setSearchResults={setSearchResults}
                 searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearch={handleSearch}/>}/>
                 <Route path="/profile" element={<Profile searchResults={searchResults} setSearchResults={setSearchResults}
-                  searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearch={handleSearch}/>}/>
-                <Route path="/history" element={<History searchResults={searchResults} setSearchResults={setSearchResults}
                   searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearch={handleSearch}/>}/>
                 <Route path="/search-profile" element={<SearchProfile searchResults={searchResults} setSearchResults={setSearchResults}
                 searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearch={handleSearch}/>} />

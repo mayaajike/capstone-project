@@ -445,6 +445,10 @@ async function calculateAudioFeatures(audioFeatures) {
   };
 }
 
+const popularityWeights = (popularity) => {
+  return 1 - (popularity / 100);
+};
+
 function calcJaccard(intersection, union) {
   if (intersection.size === 0) {
     return 0;
@@ -453,24 +457,14 @@ function calcJaccard(intersection, union) {
       unionNum = 0;
     for (const song of intersection) {
       const [title, popularity] = song.split(":");
-      if (0 <= popularity && popularity <= 34) {
-        intersectionNum += 3;
-      } else if (35 <= popularity && popularity <= 68) {
-        intersectionNum += 2;
-      } else if (69 <= popularity && popularity <= 100) {
-        intersectionNum += 1;
-      }
+      const weight = popularityWeights(popularity);
+      intersectionNum += weight
     }
 
     for (const song of union) {
       const [title, popularity] = song.split(":");
-      if (0 <= popularity && popularity <= 34) {
-        unionNum += 3;
-      } else if (35 <= popularity && popularity <= 68) {
-        unionNum += 2;
-      } else if (69 <= popularity && popularity <= 100) {
-        unionNum += 1;
-      }
+      const weight = popularityWeights(popularity)
+      unionNum += weight;
     }
     const index = (intersectionNum / unionNum).toFixed(3);
     return parseFloat(index);
@@ -535,9 +529,9 @@ function calcCompatibility(jaccardScores, cosineSimilarity) {
   jaccardScores.forEach((score) => {
     jaccardSum += score;
   });
-  let jaccardAvg = jaccardSum / jaccardScores.length;
+  let jaccardAvg = (jaccardSum / jaccardScores.length);
   const compatibility = (
-    (0.4 * jaccardAvg + 0.6 * cosineSimilarity) *
+    (0.45 * jaccardAvg + 0.55 * cosineSimilarity) *
     100
   ).toFixed(1);
   return parseFloat(compatibility);
