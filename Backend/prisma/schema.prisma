@@ -102,9 +102,9 @@ model Post {
 
 model ProfileVisits {
   id            String    @id @default(uuid())
-  visitor       User      @relation("visitorUser", fields: [visitorId], references: [id])
+  visitor       User      @relation("visitorUser", fields: [visitorId], references: [id], onDelete: Cascade)
   visitorId     String
-  visited       User      @relation("visitedUser", fields: [visitedId], references: [id])
+  visited       User      @relation("visitedUser", fields: [visitedId], references: [id], onDelete: Cascade)
   visitedId     String
   visitedCount  Int       @default(0)
   lastVisited   DateTime  @updatedAt

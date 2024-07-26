@@ -80,7 +80,7 @@ app.get('/user-spotify', async (req, res) => {
   if (userSpotify) {
     return res.status(200).json(userSpotify)
   }
-  return
+  return res.status(409).json({ message: "Spotify User not found" })
 })
 
 app.post("/users/signup", async (req, res) => {
@@ -786,6 +786,9 @@ app.get('/liked-songs', async (req, res) => {
         LikedSongs: {
           include: {
             track: true
+          },
+          orderBy: {
+            likedAt: 'desc'
           }
         }
       }

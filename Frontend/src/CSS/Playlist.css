@@ -1,7 +1,7 @@
 .liked-song-info {
     display: flex;
     flex-direction: row;
-    justify-content: space-between;
+    align-items: center;
     background-color: #fff;
     border: 1px solid #ddd;
     padding: 15px;
@@ -14,17 +14,20 @@
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     transition: transform 0.2s, box-shadow 0.2s;
     position: relative;
+    cursor: pointer;
 }
 
 .liked-song-name {
     font-weight: bold;
     color: #007BFF;
-    margin-top: 15px;
-    margin-left: -80px;
+    margin: 0;
+    padding-left: 15px;
+    flex-grow: 1;
 }
 
 .liked-artist-names {
     margin-top: 15px;
+    flex-grow: 1;
 }
 
 .liked-album-cover {
@@ -37,4 +40,5 @@
 
 .liked-at {
     margin-top: 15px;
+    flex-shrink: 0;
 }
