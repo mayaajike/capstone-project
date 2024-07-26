@@ -32,6 +32,7 @@ model User {
   friendPosts                     Post[]                   @relation("friend")
   visitedProfiles                 ProfileVisits[]          @relation("visitorUser")
   profileVisitors                 ProfileVisits[]          @relation("visitedUser")
+  LikedSongs                      LikedSongs[]
 }
 
 model SpotifyAccount {
@@ -83,6 +84,7 @@ model Tracks {
   albumCover      String
   TopSongs        TopSongs[]
   Posts           Post[]
+  LikedSongs      LikedSongs[]
 }
 
 model Post {
@@ -106,4 +108,13 @@ model ProfileVisits {
   visitedId     String
   visitedCount  Int       @default(0)
   lastVisited   DateTime  @updatedAt
+}
+
+model LikedSongs {
+  id        String     @id @default(uuid())
+  user      User       @relation(fields: [userId], references: [id])
+  userId    String
+  track     Tracks     @relation(fields: [trackId], references: [id])
+  trackId   String
+  likedAt   DateTime   @default(now())
 }

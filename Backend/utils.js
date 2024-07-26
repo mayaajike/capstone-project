@@ -264,41 +264,45 @@ async function topArtists(spotifyUser) {
 }
 
 async function getRecentlyPlayed(spotifyUser){
-  try {
-    const response = await fetch('https://api.spotify.com/v1/me/player/recently-played', {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${spotifyUser.accessToken}`
-    }
-  })
-  if (response.ok) {
-    const data = await response.json()
-    const tracks = data.items.map((item) => item.track);
-    return tracks
-  } else if (response.status === 401) {
-    const newAccessToken = await refreshSpotifyToken(spotifyUser);
-    const response = await fetch(
-      "https://api.spotify.com/v1/me/player/recently-played",
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${newAccessToken}`,
-        },
-      },
-    );
+  if (spotifyUser){
+    try {
+      const response = await fetch('https://api.spotify.com/v1/me/player/recently-played', {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${spotifyUser.accessToken}`
+      }
+    })
     if (response.ok) {
-      const data = await response.json();
+      const data = await response.json()
       const tracks = data.items.map((item) => item.track);
       return tracks
+    } else if (response.status === 401) {
+      const newAccessToken = await refreshSpotifyToken(spotifyUser);
+      const response = await fetch(
+        "https://api.spotify.com/v1/me/player/recently-played",
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${newAccessToken}`,
+          },
+        },
+      );
+      if (response.ok) {
+        const data = await response.json();
+        const tracks = data.items.map((item) => item.track);
+        return tracks
+      }
+    } else  {
+      return;
     }
-  } else  {
+    } catch (error) {
+      return error
+  }
+  } else {
     return;
   }
-  } catch (error) {
-    return error
-}
 }
 
 async function followedArtists(spotifyUser) {

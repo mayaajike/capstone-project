@@ -6,6 +6,7 @@ import { RefreshTokenContext } from "../Context/RefreshTokenContext";
 import { LogoutContext } from "../Context/LogoutContext";
 import { CircularProgress } from "@mui/material";
 import { FaRegHeart } from "react-icons/fa";
+import StarCursorTrail from "./StarCursorTrail";
 
 export default function SearchProfile({ searchResults, setSearchResults, searchQuery, setSearchQuery, handleSearch }) {
   const [topSongs, setTopSongs] = useState([]);
@@ -265,8 +266,24 @@ export default function SearchProfile({ searchResults, setSearchResults, searchQ
       throw error
     }
   }
+
+  const likeSong = async (track) => {
+    try {
+      const response = await fetch('http://localhost:4700/like-song', {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${accessToken}`
+        },
+        body: JSON.stringify({ track: track, username: currentUsername})
+      })
+    } catch (error) {
+      throw error
+    }
+  }
   return (
     <div className="profile-page">
+      <StarCursorTrail />
       <NavBar searchResults={searchResults} setSearchResults={setSearchResults}
       searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearch={handleSearch}/>
       <div className="main-content">
@@ -312,11 +329,16 @@ export default function SearchProfile({ searchResults, setSearchResults, searchQ
               recentlyPlayed.tracks.map((track, index) => (
                 <div key={index}>
                   <div className="song">
-                    <p className="song-name">{track.name}</p>
-                    <p className="artist-names">
-                      {track.artists.map((artist) => artist.name).join(", ")}
-                    </p>
-                    <p className="interaction-button"><FaRegHeart /></p>
+                  <div className="song-info" onClick={() => window.open(track.external_urls.spotify, '_blank')}>
+                      <p className="song-name">{track.name}</p>
+                      <p className="artist-names">
+                        {track.artists.map((artist) => artist.name).join(", ")}
+                      </p>
+                    </div>
+                    <p className="interaction-button" onClick={() => likeSong(track)}><FaRegHeart /></p>
+                    <div className="tool-tip">
+                      <a href={track.external_urls.spotify} target="_blank"> {track.external_urls.spotify}</a>
+                    </div>
                   </div>
                 </div>
               ))

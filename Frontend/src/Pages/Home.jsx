@@ -7,6 +7,7 @@ import { CircularProgress } from "@mui/material";
 import Discover from "../Components/Discover";
 import Posts from "../Components/Posts";
 import Pagination from "../Components/Pagination"
+import StarCursorTrail from "../Components/StarCursorTrail";
 
 export default function Home({ searchResults, setSearchResults, searchQuery, setSearchQuery, handleSearch }) {
   const refreshToken = useContext(RefreshTokenContext);
@@ -80,6 +81,7 @@ export default function Home({ searchResults, setSearchResults, searchQuery, set
 
   return (
   	<div>
+    <StarCursorTrail />
 		<NavBar searchResults={searchResults} setSearchResults={setSearchResults}
       	searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearch={handleSearch}/>
 		<div className="postContainer">

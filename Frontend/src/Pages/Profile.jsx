@@ -4,6 +4,9 @@ import "../CSS/Profile.css";
 import { RefreshTokenContext } from "../Context/RefreshTokenContext";
 import { LogoutContext } from "../Context/LogoutContext";
 import { FaShare } from "react-icons/fa6";
+import { useNavigate } from "react-router-dom"
+import Playlist from "../Components/Playlist";
+import StarCursorTrail from "../Components/StarCursorTrail";
 
 export default function Profile({
   searchResults,
@@ -25,6 +28,8 @@ export default function Profile({
   const [confirmedFriends, setConfirmedFriends] = useState([]);
   const [initiatedFriends, setInitiatedFriends] = useState([]);
   const [receivedFriends, setReceivedFriends] = useState([]);
+  const navigate = useNavigate()
+  const [showPlaylist, setShowPlaylist] = useState(false)
 
   useEffect(() => {
     if (!hasRunRef.current && topSongs.length < 1) {
@@ -64,11 +69,9 @@ export default function Profile({
       if (response.ok) {
         const data = await response.json();
         setTopSongs(data);
-      } else {
-        alert("Unable to fetch top songs");
       }
     } catch (error) {
-      alert("Unable to fetch top songs ", error);
+      throw new Error("Unable to fetch top songs ", error);
     }
   };
 
@@ -150,10 +153,6 @@ export default function Profile({
         },
         body: JSON.stringify({ track, username})
       })
-      if (response.ok) {
-        const data = await response.json()
-        console.log(data)
-      }
     } catch (error) {
       throw error
     }
@@ -161,6 +160,7 @@ export default function Profile({
 
   return (
     <div className="profile-page">
+      <StarCursorTrail />
       <NavBar
         searchResults={searchResults}
         setSearchResults={setSearchResults}
@@ -189,6 +189,16 @@ export default function Profile({
                 Spotify Profile
               </a>
             )}
+
+            <div className="view-playlist-container">
+              <div className="playlist-card" onClick={() => setShowPlaylist(true)}>
+                <img src='https://picsum.photos/200/300?random=15' alt="Playlist Cover" className="playlist-cover" />
+                <div className="playlist-info">
+                  <h3>{username}'s Liked Songs</h3>
+                </div>
+              </div>
+              <Playlist show={showPlaylist} onHide={() => setShowPlaylist(false)} accessToken={currentAccessToken} username={username}/>
+            </div>
         </div>
 
         <div className="recently-played">
@@ -197,31 +207,46 @@ export default function Profile({
           </div>
 
           <div className="recently-played-songs">
-            {recentlyPlayed &&
-              recentlyPlayed.tracks &&
+            {recentlyPlayed && recentlyPlayed.tracks ? (
               recentlyPlayed.tracks.map((track, index) => (
                 <div key={index}>
                   <div className="song">
-                    <p className="song-name">{track.name}</p>
-                    <p className="artist-names">
-                      {track.artists.map((artist) => artist.name).join(", ")}
-                    </p>
+                    <div className="song-info" onClick={() => window.open(track.external_urls.spotify, '_blank')}>
+                      <p className="song-name">{track.name}</p>
+                      <p className="artist-names">
+                        {track.artists.map((artist) => artist.name).join(", ")}
+                      </p>
+                    </div>
                     <p className="interaction-button" onClick={() => shareSong(track)}><FaShare /></p>
+                    <div className="tool-tip">
+                      <a href={track.external_urls.spotify} target="_blank"> {track.external_urls.spotify}</a>
+                    </div>
                   </div>
                 </div>
-              ))}
+              ))
+            ) : (
+              <div className="song">
+                <p style={{ justifyContent: "center", textAlign: "center" }} onClick={() => navigate('/main')}>
+                  Connect Spotify 🎵
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
       <div className="top-songs-container">
         <h3>Top Songs</h3>
-        {topSongs && topSongs.topSongs && topSongs.topSongs.map((song, index) => (
+        {topSongs && topSongs.topSongs ? (
+          topSongs.topSongs.map((song, index) => (
             <div key={index}>
               <h5 className="song-title">{song.songName}</h5>
               <p className="artist-name">{song.artistNames.join(", ")}</p>
             </div>
-          ))}
+          ))
+        ) : (
+          <p>Spotify not synced</p>
+        )}
       </div>
     </div>
   );

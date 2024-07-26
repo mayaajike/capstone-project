@@ -9,8 +9,7 @@ export default function SearchBar({
   searchResults,
   setSearchResults,
   searchQuery,
-  setSearchQuery,
-  username,
+  setSearchQuery
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchDisplay, setSearchDisplay] = useState([]);
